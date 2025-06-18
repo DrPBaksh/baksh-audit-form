@@ -672,19 +672,57 @@ class SurveyManager {
             
             // Re-enable submit button
             const submitButton = document.getElementById('submit-button');
-            submitButton.disabled = false;
-            submitButton.textContent = originalText;
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.textContent = originalText;
+            }
         }
     }
 
     /**
-     * Save draft responses
+     * Save draft responses - UPDATED to save to S3 via API
      */
     async saveDraft() {
         try {
+            // Show saving indicator
+            const saveDraftButton = document.getElementById('save-draft-button');
+            if (saveDraftButton) {
+                const originalText = saveDraftButton.textContent;
+                saveDraftButton.disabled = true;
+                saveDraftButton.textContent = 'Saving...';
+                
+                // Re-enable after 3 seconds
+                setTimeout(() => {
+                    if (saveDraftButton) {
+                        saveDraftButton.disabled = false;
+                        saveDraftButton.textContent = originalText;
+                    }
+                }, 3000);
+            }
+            
             const responses = this.collectResponses();
             
-            // Store in localStorage for now
+            // Only save if there are responses
+            if (Object.keys(responses).length === 0) {
+                this.showMessage('No responses to save yet!', 'info');
+                return;
+            }
+            
+            // Prepare draft data for API
+            const draftData = {
+                type: this.currentSurvey.type,
+                company_id: this.currentSurvey.companyId,
+                responses: responses
+            };
+            
+            if (this.currentSurvey.employeeId) {
+                draftData.employee_id = this.currentSurvey.employeeId;
+            }
+            
+            // Save to S3 via API
+            await window.bakshAPI.saveResponse(draftData);
+            
+            // Also save to localStorage as backup
             const draftKey = `baksh-survey-draft-${this.currentSurvey.type}-${this.currentSurvey.companyId}`;
             if (this.currentSurvey.employeeId) {
                 draftKey += `-${this.currentSurvey.employeeId}`;
@@ -696,10 +734,11 @@ class SurveyManager {
             }));
             
             // Show feedback
-            this.showMessage('Draft saved successfully!', 'success');
+            this.showMessage('Draft saved successfully to server!', 'success');
             
         } catch (error) {
-            this.showError('Failed to save draft');
+            console.error('Draft save error:', error);
+            this.showError(`Failed to save draft: ${window.bakshAPI.getErrorMessage(error)}`);
         }
     }
 
@@ -768,29 +807,15 @@ class SurveyManager {
      * @param {string} type - Message type ('error', 'success', 'info')
      */
     showMessage(message, type = 'info') {
-        // Create or update message element
-        let messageEl = document.getElementById('message-display');
-        if (!messageEl) {
-            messageEl = document.createElement('div');
-            messageEl.id = 'message-display';
-            messageEl.className = 'fixed top-4 right-4 max-w-md p-4 rounded-lg shadow-lg z-50';
-            document.body.appendChild(messageEl);
+        // Use the global showMessage function if available
+        if (window.showMessage) {
+            window.showMessage(message, type);
+            return;
         }
         
-        // Set message content and style
-        messageEl.textContent = message;
-        messageEl.className = `fixed top-4 right-4 max-w-md p-4 rounded-lg shadow-lg z-50 ${
-            type === 'error' ? 'bg-red-100 text-red-800 border border-red-200' :
-            type === 'success' ? 'bg-green-100 text-green-800 border border-green-200' :
-            'bg-blue-100 text-blue-800 border border-blue-200'
-        }`;
-        
-        // Auto-hide after 5 seconds
-        setTimeout(() => {
-            if (messageEl && messageEl.parentNode) {
-                messageEl.parentNode.removeChild(messageEl);
-            }
-        }, 5000);
+        // Fallback message display
+        console.log(`${type.toUpperCase()}: ${message}`);
+        alert(`${type.toUpperCase()}: ${message}`);
     }
 }
 
