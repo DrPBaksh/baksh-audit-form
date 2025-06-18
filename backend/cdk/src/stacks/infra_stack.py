@@ -39,7 +39,7 @@ class InfraStack(Stack):
                 max_age=3000
             )],
             removal_policy=RemovalPolicy.RETAIN,  # Keep survey data safe
-            versioning=True  # Enable versioning for data protection
+            versioned=True  # Enable versioning for data protection
         )
 
         # 2️⃣ S3 Bucket for Website hosting (private, accessed via CloudFront)
