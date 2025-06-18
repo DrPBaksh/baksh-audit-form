@@ -1,0 +1,365 @@
+/* Custom styles for Baksh Audit Form */
+
+/* Custom animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-out;
+}
+
+.slide-in-left {
+    animation: slideInLeft 0.3s ease-out;
+}
+
+/* Custom button hover effects */
+.btn-hover-scale:hover {
+    transform: scale(1.02);
+    transition: transform 0.2s ease-in-out;
+}
+
+.btn-hover-shadow:hover {
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease-in-out;
+}
+
+/* Custom gradient backgrounds */
+.gradient-blue {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.gradient-green {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+/* Form field enhancements */
+.form-field {
+    transition: all 0.3s ease;
+}
+
+.form-field:focus {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Custom checkbox styling */
+.custom-checkbox {
+    position: relative;
+    cursor: pointer;
+}
+
+.custom-checkbox input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.custom-checkbox .checkmark {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 20px;
+    width: 20px;
+    background-color: #ffffff;
+    border: 2px solid #d1d5db;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.custom-checkbox:hover input ~ .checkmark {
+    border-color: #3b82f6;
+}
+
+.custom-checkbox input:checked ~ .checkmark {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.custom-checkbox .checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+
+.custom-checkbox input:checked ~ .checkmark:after {
+    display: block;
+}
+
+.custom-checkbox .checkmark:after {
+    left: 6px;
+    top: 2px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+/* Custom radio button styling */
+.custom-radio {
+    position: relative;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    margin-bottom: 8px;
+}
+
+.custom-radio:hover {
+    border-color: #3b82f6;
+    background-color: #f8fafc;
+}
+
+.custom-radio input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.custom-radio .radio-mark {
+    height: 20px;
+    width: 20px;
+    background-color: #ffffff;
+    border: 2px solid #d1d5db;
+    border-radius: 50%;
+    margin-right: 12px;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.custom-radio input:checked ~ .radio-mark {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.custom-radio input:checked {
+    border-color: #3b82f6;
+    background-color: #eff6ff;
+}
+
+.custom-radio .radio-mark:after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+
+.custom-radio input:checked ~ .radio-mark:after {
+    display: block;
+}
+
+.custom-radio .radio-mark:after {
+    top: 4px;
+    left: 4px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: white;
+}
+
+/* Loading spinner */
+.spinner {
+    border: 3px solid #f3f4f6;
+    border-top: 3px solid #3b82f6;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* File upload styling */
+.file-upload-area {
+    border: 2px dashed #d1d5db;
+    border-radius: 8px;
+    padding: 32px;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.file-upload-area:hover {
+    border-color: #3b82f6;
+    background-color: #f8fafc;
+}
+
+.file-upload-area.dragover {
+    border-color: #3b82f6;
+    background-color: #eff6ff;
+}
+
+/* File list item */
+.file-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background-color: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    margin-bottom: 8px;
+}
+
+.file-item:last-child {
+    margin-bottom: 0;
+}
+
+.file-item .file-info {
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
+}
+
+.file-item .file-icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 12px;
+    color: #6b7280;
+}
+
+.file-item .file-details {
+    flex-grow: 1;
+}
+
+.file-item .file-name {
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 2px;
+}
+
+.file-item .file-size {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.file-item .remove-file {
+    padding: 4px;
+    color: #ef4444;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.file-item .remove-file:hover {
+    background-color: #fee2e2;
+}
+
+/* Progress bar animations */
+.progress-bar {
+    transition: width 0.5s ease-in-out;
+}
+
+/* Success animations */
+.success-icon {
+    animation: successPulse 0.6s ease-in-out;
+}
+
+@keyframes successPulse {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+    .custom-radio {
+        padding: 10px 12px;
+    }
+    
+    .custom-radio .radio-mark {
+        margin-right: 8px;
+    }
+    
+    .file-upload-area {
+        padding: 24px 16px;
+    }
+    
+    .file-item {
+        padding: 10px 12px;
+    }
+    
+    .file-item .file-info {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .file-item .file-icon {
+        margin-right: 0;
+        margin-bottom: 4px;
+    }
+}
+
+/* Error states */
+.error-message {
+    color: #ef4444;
+    font-size: 0.875rem;
+    margin-top: 4px;
+    animation: slideInLeft 0.3s ease-out;
+}
+
+.field-error {
+    border-color: #ef4444 !important;
+    background-color: #fef2f2;
+}
+
+/* Section dividers */
+.section-divider {
+    border-top: 1px solid #e5e7eb;
+    margin: 32px 0;
+    padding-top: 32px;
+}
+
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+    .section-title {
+        font-size: 1.125rem;
+    }
+    
+    .custom-checkbox,
+    .custom-radio {
+        font-size: 0.95rem;
+    }
+}
