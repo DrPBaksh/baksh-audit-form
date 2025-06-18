@@ -41,8 +41,8 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --help|-h)
-            echo "Usage: $0 [--owner=<name>] [--environment=<env>] [--help]"
-            echo "  --owner=<name>        Set owner name for resource naming (default: current username)"
+            echo "Usage: $0 [--owner=<n>] [--environment=<env>] [--help]"
+            echo "  --owner=<n>        Set owner name for resource naming (default: current username)"
             echo "  --environment=<env>   Set environment (default: dev)"
             echo "  --help               Show this help message"
             exit 0
@@ -129,13 +129,25 @@ function build_lambda_layers() {
         echo "📦 Building shared layer..."
         cd "$LAMBDA_DIR/shared"
         
-        # Create python directory for layer
+        # Clean and create python directory for layer
+        rm -rf python
         mkdir -p python
         
-        # Install dependencies to python directory
+        # Install pip dependencies to python directory
         pip install -r requirements.txt -t python/ --upgrade
         
+        # Copy custom Python modules to python directory
+        echo "📦 Copying custom Python modules..."
+        cp *.py python/ 2>/dev/null || echo "ℹ️  No .py files to copy"
+        
+        # Ensure __init__.py exists
+        if [ ! -f "python/__init__.py" ]; then
+            touch python/__init__.py
+        fi
+        
         echo "✅ Shared layer built successfully"
+        echo "📋 Layer contents:"
+        ls -la python/
         cd "$SCRIPT_DIR"
     fi
 }
