@@ -78,6 +78,12 @@ class ApiStack(Stack):
                     "X-Amz-Security-Token",
                     "X-Amz-User-Agent"
                 ]
+            ),
+            # Ensure deployment is created automatically
+            deploy=True,
+            deploy_options=apigateway.StageOptions(
+                stage_name=environment,
+                description=f"Baksh Audit Form Survey API - {environment} stage"
             )
         )
 
@@ -106,16 +112,6 @@ class ApiStack(Stack):
         )
         
         responses_resource.add_method("POST", responses_integration)
-
-        # 6️⃣ API Gateway Deployment
-        deployment = apigateway.Deployment(self, "SurveyApiDeployment",
-            api=api
-        )
-        
-        stage = apigateway.Stage(self, "SurveyApiStage",
-            deployment=deployment,
-            stage_name=environment
-        )
 
         # 7️⃣ Outputs
         CfnOutput(self, "ApiUrl",
