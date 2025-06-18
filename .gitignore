@@ -35,6 +35,10 @@ venv/
 ENV/
 env/
 
+backend/lambda/shared/python/botocore/data/
+
+backend/lambda/shared/python/
+
 # IDE
 .vscode/
 .idea/

@@ -63,7 +63,7 @@ class ApiStack(Stack):
             function_name=f"{prefix}-save-response"
         )
 
-        # 4️⃣ API Gateway REST API
+        # 4️⃣ API Gateway REST API with CORS
         api = apigateway.RestApi(self, "SurveyApi",
             rest_api_name=f"{prefix}-api",
             description="Baksh Audit Form Survey API",
@@ -81,111 +81,31 @@ class ApiStack(Stack):
             )
         )
 
-        # 5️⃣ API Resources and Methods
+        # 5️⃣ API Resources and Methods with Proxy Integration
         
         # /questions resource
         questions_resource = api.root.add_resource("questions")
         
         # GET /questions (with query parameter ?type=company|employee)
+        # Using proxy integration - this passes through Lambda response headers
         questions_integration = apigateway.LambdaIntegration(
             get_questions_function,
-            proxy=False,
-            integration_responses=[
-                apigateway.IntegrationResponse(
-                    status_code="200",
-                    response_parameters={
-                        "method.response.header.Access-Control-Allow-Origin": "'*'"
-                    }
-                ),
-                apigateway.IntegrationResponse(
-                    status_code="400",
-                    response_parameters={
-                        "method.response.header.Access-Control-Allow-Origin": "'*'"
-                    }
-                ),
-                apigateway.IntegrationResponse(
-                    status_code="500",
-                    response_parameters={
-                        "method.response.header.Access-Control-Allow-Origin": "'*'"
-                    }
-                )
-            ]
+            proxy=True  # Enable proxy integration for proper CORS handling
         )
         
-        questions_resource.add_method("GET", questions_integration,
-            method_responses=[
-                apigateway.MethodResponse(
-                    status_code="200",
-                    response_parameters={
-                        "method.response.header.Access-Control-Allow-Origin": True
-                    }
-                ),
-                apigateway.MethodResponse(
-                    status_code="400",
-                    response_parameters={
-                        "method.response.header.Access-Control-Allow-Origin": True
-                    }
-                ),
-                apigateway.MethodResponse(
-                    status_code="500",
-                    response_parameters={
-                        "method.response.header.Access-Control-Allow-Origin": True
-                    }
-                )
-            ]
-        )
+        questions_resource.add_method("GET", questions_integration)
 
         # /responses resource
         responses_resource = api.root.add_resource("responses")
         
         # POST /responses
+        # Using proxy integration - this passes through Lambda response headers
         responses_integration = apigateway.LambdaIntegration(
             save_response_function,
-            proxy=False,
-            integration_responses=[
-                apigateway.IntegrationResponse(
-                    status_code="200",
-                    response_parameters={
-                        "method.response.header.Access-Control-Allow-Origin": "'*'"
-                    }
-                ),
-                apigateway.IntegrationResponse(
-                    status_code="400",
-                    response_parameters={
-                        "method.response.header.Access-Control-Allow-Origin": "'*'"
-                    }
-                ),
-                apigateway.IntegrationResponse(
-                    status_code="500",
-                    response_parameters={
-                        "method.response.header.Access-Control-Allow-Origin": "'*'"
-                    }
-                )
-            ]
+            proxy=True  # Enable proxy integration for proper CORS handling
         )
         
-        responses_resource.add_method("POST", responses_integration,
-            method_responses=[
-                apigateway.MethodResponse(
-                    status_code="200",
-                    response_parameters={
-                        "method.response.header.Access-Control-Allow-Origin": True
-                    }
-                ),
-                apigateway.MethodResponse(
-                    status_code="400",
-                    response_parameters={
-                        "method.response.header.Access-Control-Allow-Origin": True
-                    }
-                ),
-                apigateway.MethodResponse(
-                    status_code="500",
-                    response_parameters={
-                        "method.response.header.Access-Control-Allow-Origin": True
-                    }
-                )
-            ]
-        )
+        responses_resource.add_method("POST", responses_integration)
 
         # 6️⃣ API Gateway Deployment
         deployment = apigateway.Deployment(self, "SurveyApiDeployment",
