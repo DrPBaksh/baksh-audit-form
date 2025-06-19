@@ -30,8 +30,13 @@ def extract_question_type_from_event(event):
     question_type = None
     
     logger.info(f"=== EXTRACTING QUESTION TYPE ===")
-    logger.info(f"Event keys: {list(event.keys())}")
+    logger.info(f"Event keys: {list(event.keys()) if event else 'None/Empty'}")
     logger.info(f"Event type: {type(event)}")
+    
+    # Handle empty or None events
+    if not event or not isinstance(event, dict):
+        logger.warning("Event is empty or not a dictionary")
+        return None
     
     # Method 1: API Gateway Proxy Integration - queryStringParameters
     if 'queryStringParameters' in event:
@@ -41,18 +46,20 @@ def extract_question_type_from_event(event):
             question_type = query_params.get('type')
             if question_type:
                 logger.info(f"✅ Found type in queryStringParameters: {question_type}")
+                return question_type
     
     # Method 2: API Gateway Proxy Integration - multiValueQueryStringParameters  
-    if not question_type and 'multiValueQueryStringParameters' in event:
+    if 'multiValueQueryStringParameters' in event:
         multi_params = event['multiValueQueryStringParameters']
         logger.info(f"multiValueQueryStringParameters: {multi_params}")
         if multi_params and isinstance(multi_params, dict) and 'type' in multi_params:
             if isinstance(multi_params['type'], list) and multi_params['type']:
                 question_type = multi_params['type'][0]
                 logger.info(f"✅ Found type in multiValueQueryStringParameters: {question_type}")
+                return question_type
     
     # Method 3: Parse from raw query string if available
-    if not question_type and 'rawQueryString' in event:
+    if 'rawQueryString' in event:
         raw_query = event['rawQueryString']
         logger.info(f"rawQueryString: {raw_query}")
         if raw_query:
@@ -61,25 +68,28 @@ def extract_question_type_from_event(event):
                 if 'type' in parsed_query and parsed_query['type']:
                     question_type = parsed_query['type'][0]
                     logger.info(f"✅ Found type in rawQueryString: {question_type}")
+                    return question_type
             except Exception as e:
                 logger.warning(f"Failed to parse rawQueryString: {e}")
     
     # Method 4: Check in path parameters (alternative API design)
-    if not question_type and 'pathParameters' in event:
+    if 'pathParameters' in event:
         path_params = event['pathParameters']
         logger.info(f"pathParameters: {path_params}")
         if path_params and isinstance(path_params, dict):
             question_type = path_params.get('type')
             if question_type:
                 logger.info(f"✅ Found type in pathParameters: {question_type}")
+                return question_type
     
     # Method 5: Direct parameter in event (for testing/direct invocation)
-    if not question_type and 'type' in event:
+    if 'type' in event:
         question_type = event['type']
         logger.info(f"✅ Found type in direct event: {question_type}")
+        return question_type
     
     # Method 6: Check in HTTP method context (if present)
-    if not question_type and 'requestContext' in event:
+    if 'requestContext' in event:
         request_context = event['requestContext']
         if isinstance(request_context, dict) and 'http' in request_context:
             http_context = request_context['http']
@@ -91,24 +101,24 @@ def extract_question_type_from_event(event):
                     if 'type' in parsed_query and parsed_query['type']:
                         question_type = parsed_query['type'][0]
                         logger.info(f"✅ Found type in requestContext.http.queryString: {question_type}")
+                        return question_type
                 except Exception as e:
                     logger.warning(f"Failed to parse query string from requestContext: {e}")
     
-    # Method 7: Last resort - check event body for JSON with type parameter
-    if not question_type and 'body' in event:
-        try:
-            body = event['body']
-            if body:
-                if isinstance(body, str):
-                    body_data = json.loads(body)
-                else:
-                    body_data = body
-                
-                if isinstance(body_data, dict) and 'type' in body_data:
-                    question_type = body_data['type']
-                    logger.info(f"✅ Found type in request body: {question_type}")
-        except Exception as e:
-            logger.debug(f"Failed to parse body for type parameter: {e}")
+    # Method 7: Parse query string from path if it contains '?'
+    if 'path' in event:
+        path = event['path']
+        if '?' in path:
+            try:
+                query_string = path.split('?', 1)[1]
+                logger.info(f"Query string from path: {query_string}")
+                parsed_query = urllib.parse.parse_qs(query_string)
+                if 'type' in parsed_query and parsed_query['type']:
+                    question_type = parsed_query['type'][0]
+                    logger.info(f"✅ Found type in path query string: {question_type}")
+                    return question_type
+            except Exception as e:
+                logger.warning(f"Failed to parse query string from path: {e}")
     
     logger.info(f"=== FINAL EXTRACTED QUESTION TYPE: {question_type} ===")
     return question_type
@@ -129,7 +139,15 @@ def lambda_handler(event, context):
         logger.info(f"=== GET QUESTIONS REQUEST START ===")
         logger.info(f"Function: {context.function_name if context else 'TEST'}")
         logger.info(f"Request ID: {context.aws_request_id if context else 'TEST'}")
-        logger.info(f"Event structure: {json.dumps(event, default=str, indent=2)}")
+        
+        # Log the event structure safely
+        if event:
+            logger.info(f"Event keys: {list(event.keys())}")
+            logger.info(f"HTTP Method: {event.get('httpMethod', 'N/A')}")
+            logger.info(f"Path: {event.get('path', 'N/A')}")
+            logger.info(f"Query params: {event.get('queryStringParameters', 'N/A')}")
+        else:
+            logger.warning("Received empty event")
         
         # Extract the question type using robust method
         question_type = extract_question_type_from_event(event)
@@ -139,15 +157,15 @@ def lambda_handler(event, context):
             error_details = {
                 'error': 'Missing required parameter: type',
                 'message': 'Please specify type=company or type=employee in query parameters',
-                'received_event_keys': list(event.keys()),
+                'received_event_keys': list(event.keys()) if event else [],
                 'debug_info': {
-                    'queryStringParameters': event.get('queryStringParameters'),
-                    'multiValueQueryStringParameters': event.get('multiValueQueryStringParameters'),
-                    'pathParameters': event.get('pathParameters'),
-                    'rawQueryString': event.get('rawQueryString'),
-                    'httpMethod': event.get('httpMethod'),
-                    'resource': event.get('resource'),
-                    'path': event.get('path')
+                    'queryStringParameters': event.get('queryStringParameters') if event else None,
+                    'multiValueQueryStringParameters': event.get('multiValueQueryStringParameters') if event else None,
+                    'pathParameters': event.get('pathParameters') if event else None,
+                    'rawQueryString': event.get('rawQueryString') if event else None,
+                    'httpMethod': event.get('httpMethod') if event else None,
+                    'resource': event.get('resource') if event else None,
+                    'path': event.get('path') if event else None
                 },
                 'help': 'Use: GET /questions?type=company or GET /questions?type=employee'
             }
@@ -232,7 +250,7 @@ def lambda_handler(event, context):
         logger.info(f"Questions field type: {type(response_data['questions'])}")
         
         final_response = lambda_response(200, response_data)
-        logger.info(f"Final response structure: {json.dumps({k: str(v)[:100] + '...' if len(str(v)) > 100 else v for k, v in final_response.items()}, indent=2)}")
+        logger.info(f"Final response status: {final_response.get('statusCode')}")
         
         return final_response
         
@@ -250,7 +268,7 @@ def lambda_handler(event, context):
             'error': 'Internal server error',
             'message': 'Failed to retrieve questions',
             'request_id': context.aws_request_id if context else None,
-            'debug_info': str(e)
+            'debug_info': str(e) if log_level == 'DEBUG' else 'Enable DEBUG logging for details'
         })
 
 
