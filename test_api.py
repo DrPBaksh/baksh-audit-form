@@ -8,6 +8,7 @@ Usage:
     
 Requirements:
     pip install requests colorama
+
 """
 
 import requests
@@ -106,6 +107,11 @@ class APITester:
                 "e020": "Excited about AI potential but want proper training first"
             }
         }
+        
+        # Store IDs for retrieval tests
+        self.saved_company_id = None
+        self.saved_employee_id = None
+        self.saved_employee_company_id = None
     
     def log(self, message: str, level: str = "INFO"):
         """Enhanced logging with colors"""
@@ -292,7 +298,8 @@ class APITester:
         if result.success:
             data = result.response_data
             if "message" in data and "company_id" in data:
-                self.log(f"✅ Company response saved: {data.get('company_id')}", "SUCCESS")
+                self.saved_company_id = data.get("company_id")
+                self.log(f"✅ Company response saved: {self.saved_company_id}", "SUCCESS")
             else:
                 result.success = False
                 result.error_message = "Invalid response format"
@@ -310,7 +317,9 @@ class APITester:
         if result.success:
             data = result.response_data
             if "message" in data and "employee_id" in data:
-                self.log(f"✅ Employee response saved: {data.get('employee_id')}", "SUCCESS")
+                self.saved_employee_id = data.get("employee_id")
+                self.saved_employee_company_id = data.get("company_id")
+                self.log(f"✅ Employee response saved: {self.saved_employee_id}", "SUCCESS")
             else:
                 result.success = False
                 result.error_message = "Invalid response format"
@@ -351,6 +360,107 @@ class APITester:
                 self.log(f"✅ Employee response with {file_count} files saved", "SUCCESS")
             else:
                 self.log("⚠️ File upload count not reported", "WARNING")
+        
+        self.results.append(result)
+        return result
+    
+    def test_get_existing_company_response(self) -> TestResult:
+        """Test GET /responses for existing company response"""
+        self.log("Testing GET /responses (existing company)", "INFO")
+        
+        if not self.saved_company_id:
+            result = TestResult(
+                test_name="Get Existing Company Response",
+                endpoint="/responses",
+                method="GET",
+                status_code=0,
+                expected_status=200,
+                response_time_ms=0,
+                success=False,
+                error_message="No saved company ID available for retrieval test"
+            )
+            self.results.append(result)
+            return result
+        
+        endpoint = f"/responses?type=company&company_id={self.saved_company_id}"
+        result = self.make_request("GET", endpoint)
+        result.test_name = "Get Existing Company Response"
+        
+        if result.success:
+            data = result.response_data
+            if "data" in data and "responses" in data["data"]:
+                response_count = len(data["data"]["responses"])
+                self.log(f"✅ Retrieved company response with {response_count} answers", "SUCCESS")
+            else:
+                result.success = False
+                result.error_message = "Invalid response structure"
+        
+        self.results.append(result)
+        return result
+    
+    def test_get_existing_employee_response(self) -> TestResult:
+        """Test GET /responses for existing employee response"""
+        self.log("Testing GET /responses (existing employee)", "INFO")
+        
+        if not self.saved_employee_id or not self.saved_employee_company_id:
+            result = TestResult(
+                test_name="Get Existing Employee Response",
+                endpoint="/responses",
+                method="GET",
+                status_code=0,
+                expected_status=200,
+                response_time_ms=0,
+                success=False,
+                error_message="No saved employee ID available for retrieval test"
+            )
+            self.results.append(result)
+            return result
+        
+        endpoint = f"/responses?type=employee&company_id={self.saved_employee_company_id}&employee_id={self.saved_employee_id}"
+        result = self.make_request("GET", endpoint)
+        result.test_name = "Get Existing Employee Response"
+        
+        if result.success:
+            data = result.response_data
+            if "data" in data and "responses" in data["data"]:
+                response_count = len(data["data"]["responses"])
+                self.log(f"✅ Retrieved employee response with {response_count} answers", "SUCCESS")
+            else:
+                result.success = False
+                result.error_message = "Invalid response structure"
+        
+        self.results.append(result)
+        return result
+    
+    def test_get_nonexistent_response(self) -> TestResult:
+        """Test GET /responses for non-existent response (should return 404)"""
+        self.log("Testing GET /responses (non-existent)", "INFO")
+        
+        fake_company_id = f"nonexistent-{uuid.uuid4().hex[:8]}"
+        endpoint = f"/responses?type=company&company_id={fake_company_id}"
+        
+        result = self.make_request("GET", endpoint)
+        result.test_name = "Get Non-existent Response"
+        result.expected_status = 404
+        result.success = result.status_code == 404
+        
+        if result.success:
+            self.log("✅ Correctly returned 404 for non-existent response", "SUCCESS")
+        
+        self.results.append(result)
+        return result
+    
+    def test_get_response_missing_params(self) -> TestResult:
+        """Test GET /responses with missing parameters"""
+        self.log("Testing GET /responses (missing parameters)", "INFO")
+        
+        result = self.make_request("GET", "/responses?type=company")  # Missing company_id
+        result.test_name = "Get Response - Missing Parameters"
+        result.expected_status = 400
+        result.success = result.status_code == 400
+        
+        if result.success:
+            self.log("✅ Correctly rejected missing parameters", "SUCCESS")
         
         self.results.append(result)
         return result
@@ -427,16 +537,29 @@ class APITester:
         
         start_time = time.time()
         
-        # Run all tests
+        # Run all tests in order
         tests = [
+            # Question endpoint tests
             self.test_get_company_questions,
             self.test_get_employee_questions,
             self.test_get_questions_invalid_type,
             self.test_get_questions_missing_type,
+            
+            # Save response tests (run before retrieval tests)
             self.test_save_company_response,
             self.test_save_employee_response,
             self.test_save_employee_response_with_files,
+            
+            # Get response tests (depends on save tests)
+            self.test_get_existing_company_response,
+            self.test_get_existing_employee_response,
+            self.test_get_nonexistent_response,
+            self.test_get_response_missing_params,
+            
+            # Error handling tests
             self.test_save_invalid_response,
+            
+            # General tests
             self.test_cors_headers,
             self.test_response_update,
         ]
