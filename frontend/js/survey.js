@@ -416,6 +416,611 @@ class SurveyManager {
         return select;
     }
 
-    // Continue with utility methods
+    /**
+     * Setup file upload functionality
+     */
     setupFileUpload() {
-        const fileInput =
+        const fileInput = document.getElementById('file-input');
+        const fileList = document.getElementById('file-list');
+        
+        if (!fileInput || !fileList) return;
+        
+        fileInput.addEventListener('change', (event) => {
+            const files = Array.from(event.target.files);
+            
+            files.forEach(file => {
+                // Check file size (max 10MB)
+                if (file.size > 10 * 1024 * 1024) {
+                    this.showMessage(`File "${file.name}" is too large. Maximum size is 10MB.`, 'error');
+                    return;
+                }
+                
+                // Check if file already exists
+                if (this.uploadedFiles.some(f => f.name === file.name)) {
+                    this.showMessage(`File "${file.name}" is already uploaded.`, 'warning');
+                    return;
+                }
+                
+                this.uploadedFiles.push(file);
+                this.addFileToList(file);
+            });
+            
+            // Clear the input
+            fileInput.value = '';
+        });
+    }
+
+    /**
+     * Add file to the display list
+     */
+    addFileToList(file) {
+        const fileList = document.getElementById('file-list');
+        const fileItem = document.createElement('div');
+        fileItem.className = 'flex items-center justify-between p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg';
+        
+        const fileInfo = document.createElement('div');
+        fileInfo.className = 'flex items-center space-x-3';
+        
+        const fileIcon = document.createElement('i');
+        fileIcon.className = `fas ${this.getFileIcon(file.name)} text-primary-600 dark:text-primary-400`;
+        
+        const fileDetails = document.createElement('div');
+        fileDetails.innerHTML = `
+            <div class="font-medium text-gray-900 dark:text-white">${file.name}</div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">${this.formatFileSize(file.size)}</div>
+        `;
+        
+        fileInfo.appendChild(fileIcon);
+        fileInfo.appendChild(fileDetails);
+        
+        const removeButton = document.createElement('button');
+        removeButton.type = 'button';
+        removeButton.className = 'text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors';
+        removeButton.innerHTML = '<i class="fas fa-times"></i>';
+        removeButton.addEventListener('click', () => {
+            this.removeFile(file.name);
+            fileItem.remove();
+        });
+        
+        fileItem.appendChild(fileInfo);
+        fileItem.appendChild(removeButton);
+        fileList.appendChild(fileItem);
+    }
+
+    /**
+     * Remove file from uploaded files
+     */
+    removeFile(fileName) {
+        this.uploadedFiles = this.uploadedFiles.filter(file => file.name !== fileName);
+    }
+
+    /**
+     * Get appropriate icon for file type
+     */
+    getFileIcon(fileName) {
+        const extension = fileName.split('.').pop().toLowerCase();
+        const iconMap = {
+            'pdf': 'fa-file-pdf',
+            'doc': 'fa-file-word',
+            'docx': 'fa-file-word',
+            'txt': 'fa-file-alt',
+            'jpg': 'fa-file-image',
+            'jpeg': 'fa-file-image',
+            'png': 'fa-file-image',
+            'xlsx': 'fa-file-excel',
+            'xls': 'fa-file-excel'
+        };
+        return iconMap[extension] || 'fa-file';
+    }
+
+    /**
+     * Format file size for display
+     */
+    formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    /**
+     * Load existing responses if any
+     */
+    async loadExistingResponses() {
+        try {
+            const existing = await window.bakshAPI.getExistingResponse(
+                this.currentSurvey.type,
+                this.currentSurvey.companyId,
+                this.currentSurvey.employeeId
+            );
+            
+            if (existing && existing.responses) {
+                this.currentResponses = existing.responses;
+                console.log('Loaded existing responses:', Object.keys(this.currentResponses).length);
+            }
+        } catch (error) {
+            console.log('No existing responses found:', error.message);
+        }
+    }
+
+    /**
+     * Update progress indicator
+     */
+    updateProgress() {
+        const responses = this.collectResponses();
+        const totalQuestions = this.currentSurvey.questions.length;
+        const answeredQuestions = Object.keys(responses).length;
+        
+        const progressCurrent = document.getElementById('progress-current');
+        const progressBar = document.getElementById('progress-bar');
+        
+        if (progressCurrent) {
+            progressCurrent.textContent = answeredQuestions;
+        }
+        
+        if (progressBar) {
+            const percentage = (answeredQuestions / totalQuestions) * 100;
+            progressBar.style.width = `${percentage}%`;
+        }
+    }
+
+    /**
+     * Collect all responses from the form
+     */
+    collectResponses() {
+        const responses = {};
+        
+        this.currentSurvey.questions.forEach(question => {
+            const input = document.querySelector(`[name="${question.id}"]`);
+            
+            if (input) {
+                if (input.type === 'radio') {
+                    const checked = document.querySelector(`[name="${question.id}"]:checked`);
+                    if (checked) {
+                        responses[question.id] = checked.value;
+                    }
+                } else if (input.type === 'checkbox') {
+                    const checked = document.querySelectorAll(`[name="${question.id}[]"]:checked`);
+                    if (checked.length > 0) {
+                        responses[question.id] = Array.from(checked).map(cb => cb.value);
+                    }
+                } else if (input.value && input.value.trim() !== '') {
+                    responses[question.id] = input.value.trim();
+                }
+            }
+        });
+        
+        return responses;
+    }
+
+    /**
+     * Validate form responses
+     */
+    validateResponses(responses) {
+        this.validationErrors = [];
+        
+        this.currentSurvey.questions.forEach((question, index) => {
+            if (question.required && !responses[question.id]) {
+                this.validationErrors.push({
+                    questionId: question.id,
+                    message: 'This field is required',
+                    questionText: question.text,
+                    questionIndex: index + 1
+                });
+            }
+        });
+        
+        return this.validationErrors.length === 0;
+    }
+
+    /**
+     * Display validation errors
+     */
+    showValidationErrors() {
+        // Clear previous errors
+        document.querySelectorAll('.error-message').forEach(error => {
+            error.classList.add('hidden');
+        });
+        
+        this.validationErrors.forEach(error => {
+            const errorElement = document.getElementById(`error-${error.questionId}`);
+            if (errorElement) {
+                errorElement.classList.remove('hidden');
+                errorElement.querySelector('span').textContent = error.message;
+                
+                // Scroll to first error
+                if (error === this.validationErrors[0]) {
+                    const questionElement = document.querySelector(`[data-question-id="${error.questionId}"]`);
+                    if (questionElement) {
+                        questionElement.scrollIntoView({ 
+                            behavior: 'smooth', 
+                            block: 'center' 
+                        });
+                    }
+                }
+            }
+        });
+        
+        // Show summary message
+        const errorCount = this.validationErrors.length;
+        const message = errorCount === 1 
+            ? 'Please complete the required field.'
+            : `Please complete ${errorCount} required fields.`;
+        
+        this.showMessage(message, 'error');
+    }
+
+    /**
+     * Save draft responses
+     */
+    async saveDraft() {
+        try {
+            const responses = this.collectResponses();
+            
+            if (Object.keys(responses).length === 0) {
+                this.showMessage('No responses to save.', 'warning');
+                return;
+            }
+            
+            const button = document.getElementById('save-draft-button');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+            button.disabled = true;
+            
+            await window.bakshAPI.saveDraft(
+                this.currentSurvey.type,
+                this.currentSurvey.companyId,
+                responses,
+                this.currentSurvey.employeeId,
+                this.currentSurvey.employeeName
+            );
+            
+            this.showMessage('Progress saved successfully!', 'success');
+            
+            button.innerHTML = originalText;
+            button.disabled = false;
+            
+        } catch (error) {
+            this.showMessage(`Failed to save progress: ${window.bakshAPI.getErrorMessage(error)}`, 'error');
+            
+            const button = document.getElementById('save-draft-button');
+            button.innerHTML = '<i class="fas fa-save mr-2"></i>Save Progress';
+            button.disabled = false;
+        }
+    }
+
+    /**
+     * Submit the survey
+     */
+    async submitSurvey() {
+        try {
+            const responses = this.collectResponses();
+            
+            // Validate responses
+            if (!this.validateResponses(responses)) {
+                this.showValidationErrors();
+                return;
+            }
+            
+            const button = document.getElementById('submit-button');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Submitting...';
+            button.disabled = true;
+            
+            // Prepare form data
+            const formData = {
+                type: this.currentSurvey.type,
+                companyId: this.currentSurvey.companyId,
+                responses: responses,
+                submittedAt: new Date().toISOString()
+            };
+            
+            // Add employee info if it's an employee survey
+            if (this.currentSurvey.type === 'employee') {
+                formData.employeeId = this.currentSurvey.employeeId;
+                formData.employeeName = this.currentSurvey.employeeName;
+            }
+            
+            // Submit the survey
+            await window.bakshAPI.submitSurvey(formData, this.uploadedFiles);
+            
+            // Show success screen
+            this.showSuccessScreen();
+            
+        } catch (error) {
+            this.showMessage(`Failed to submit survey: ${window.bakshAPI.getErrorMessage(error)}`, 'error');
+            
+            const button = document.getElementById('submit-button');
+            button.innerHTML = '<i class="fas fa-paper-plane mr-2"></i>Submit Survey';
+            button.disabled = false;
+        }
+    }
+
+    /**
+     * Show success screen
+     */
+    showSuccessScreen() {
+        // Hide survey screen and show success screen
+        document.getElementById('survey-screen').classList.add('hidden');
+        document.getElementById('success-screen').classList.remove('hidden');
+        
+        // Scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        // Clear form data
+        this.currentSurvey = null;
+        this.surveyData = null;
+        this.currentResponses = {};
+        this.uploadedFiles = [];
+        this.validationErrors = [];
+    }
+
+    /**
+     * Show loading state
+     */
+    showLoading(show) {
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const surveyForm = document.getElementById('survey-form');
+        
+        if (show) {
+            if (loadingIndicator) loadingIndicator.classList.remove('hidden');
+            if (surveyForm) surveyForm.classList.add('hidden');
+        } else {
+            if (loadingIndicator) loadingIndicator.classList.add('hidden');
+            if (surveyForm) surveyForm.classList.remove('hidden');
+        }
+    }
+
+    /**
+     * Show error message
+     */
+    showError(message) {
+        this.showMessage(message, 'error');
+    }
+
+    /**
+     * Show message using the global message system
+     */
+    showMessage(message, type = 'info') {
+        if (window.showMessage) {
+            window.showMessage(message, type);
+        } else {
+            // Fallback alert if global message system not available
+            alert(message);
+        }
+    }
+
+    /**
+     * Get question by ID
+     */
+    getQuestionById(questionId) {
+        return this.currentSurvey?.questions?.find(q => q.id === questionId);
+    }
+
+    /**
+     * Check if survey is complete
+     */
+    isSurveyComplete() {
+        const responses = this.collectResponses();
+        const requiredQuestions = this.currentSurvey.questions.filter(q => q.required);
+        
+        return requiredQuestions.every(question => {
+            const response = responses[question.id];
+            return response !== undefined && response !== null && response !== '';
+        });
+    }
+
+    /**
+     * Get completion percentage
+     */
+    getCompletionPercentage() {
+        const responses = this.collectResponses();
+        const totalQuestions = this.currentSurvey.questions.length;
+        const answeredQuestions = Object.keys(responses).length;
+        
+        return Math.round((answeredQuestions / totalQuestions) * 100);
+    }
+
+    /**
+     * Auto-save functionality
+     */
+    enableAutoSave() {
+        let autoSaveTimer;
+        
+        const handleChange = () => {
+            clearTimeout(autoSaveTimer);
+            autoSaveTimer = setTimeout(() => {
+                this.saveDraft();
+            }, 30000); // Auto-save after 30 seconds of inactivity
+        };
+        
+        // Add listeners to all form inputs
+        document.addEventListener('change', handleChange);
+        document.addEventListener('input', handleChange);
+    }
+
+    /**
+     * Handle keyboard shortcuts
+     */
+    setupKeyboardShortcuts() {
+        document.addEventListener('keydown', (event) => {
+            // Ctrl+S or Cmd+S to save draft
+            if ((event.ctrlKey || event.metaKey) && event.key === 's') {
+                event.preventDefault();
+                this.saveDraft();
+            }
+            
+            // Ctrl+Enter or Cmd+Enter to submit
+            if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+                event.preventDefault();
+                this.submitSurvey();
+            }
+        });
+    }
+
+    /**
+     * Export responses as JSON (for debugging/backup)
+     */
+    exportResponses() {
+        const responses = this.collectResponses();
+        const data = {
+            survey: this.currentSurvey,
+            responses: responses,
+            exportedAt: new Date().toISOString()
+        };
+        
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `survey-responses-${this.currentSurvey.type}-${this.currentSurvey.companyId}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        
+        URL.revokeObjectURL(url);
+    }
+
+    /**
+     * Import responses from JSON (for debugging/restore)
+     */
+    importResponses(jsonData) {
+        try {
+            const data = JSON.parse(jsonData);
+            if (data.responses) {
+                this.currentResponses = data.responses;
+                this.renderSurvey(); // Re-render to show imported responses
+                this.showMessage('Responses imported successfully!', 'success');
+            }
+        } catch (error) {
+            this.showMessage('Failed to import responses: Invalid JSON format', 'error');
+        }
+    }
+
+    /**
+     * Reset survey (clear all responses)
+     */
+    resetSurvey() {
+        if (confirm('Are you sure you want to clear all responses? This action cannot be undone.')) {
+            this.currentResponses = {};
+            this.uploadedFiles = [];
+            this.validationErrors = [];
+            
+            // Clear form
+            const form = document.getElementById('survey-questions-form');
+            if (form) {
+                form.reset();
+                
+                // Clear custom styled elements
+                form.querySelectorAll('.radio-option, .checkbox-option').forEach(option => {
+                    option.classList.remove('border-primary-500', 'bg-primary-50', 'dark:bg-primary-900/20');
+                });
+                
+                form.querySelectorAll('.error-message').forEach(error => {
+                    error.classList.add('hidden');
+                });
+            }
+            
+            // Clear file list
+            const fileList = document.getElementById('file-list');
+            if (fileList) {
+                fileList.innerHTML = '';
+            }
+            
+            this.updateProgress();
+            this.showMessage('Survey reset successfully!', 'success');
+        }
+    }
+
+    /**
+     * Print survey (for offline completion)
+     */
+    printSurvey() {
+        const printWindow = window.open('', '_blank');
+        const questions = this.currentSurvey.questions;
+        
+        let html = `
+            <html>
+            <head>
+                <title>${this.currentSurvey.type} Survey - ${this.currentSurvey.companyId}</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
+                    .header { border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+                    .question { margin-bottom: 20px; page-break-inside: avoid; }
+                    .question-number { font-weight: bold; color: #666; }
+                    .question-text { font-weight: bold; margin: 5px 0; }
+                    .options { margin-left: 20px; }
+                    .option { margin: 5px 0; }
+                    .required { color: red; }
+                    .section-header { font-size: 18px; font-weight: bold; margin: 30px 0 15px 0; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+                    @media print { .no-print { display: none; } }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h1>${this.currentSurvey.type.charAt(0).toUpperCase() + this.currentSurvey.type.slice(1)} AI & Data Readiness Survey</h1>
+                    <p>Company ID: ${this.currentSurvey.companyId}</p>
+                    ${this.currentSurvey.employeeName ? `<p>Employee: ${this.currentSurvey.employeeName}</p>` : ''}
+                    <p>Generated: ${new Date().toLocaleDateString()}</p>
+                </div>
+        `;
+        
+        const questionsBySection = this.groupQuestionsBySection(questions);
+        let questionCounter = 1;
+        
+        Object.keys(questionsBySection).forEach(sectionName => {
+            if (sectionName && sectionName !== 'undefined') {
+                html += `<div class="section-header">${sectionName}</div>`;
+            }
+            
+            questionsBySection[sectionName].forEach(question => {
+                html += `
+                    <div class="question">
+                        <div class="question-number">Question ${questionCounter}</div>
+                        <div class="question-text">
+                            ${question.text}
+                            ${question.required ? '<span class="required">*</span>' : ''}
+                        </div>
+                `;
+                
+                if (question.options && question.options.length > 0) {
+                    html += '<div class="options">';
+                    question.options.forEach(option => {
+                        const inputType = question.type === 'checkbox' ? '☐' : '○';
+                        html += `<div class="option">${inputType} ${option}</div>`;
+                    });
+                    html += '</div>';
+                } else {
+                    html += '<div style="border-bottom: 1px solid #ccc; height: 40px; margin: 10px 0;"></div>';
+                }
+                
+                html += '</div>';
+                questionCounter++;
+            });
+        });
+        
+        html += `
+                <div class="no-print" style="margin-top: 40px; text-align: center;">
+                    <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px;">Print Survey</button>
+                </div>
+            </body>
+            </html>
+        `;
+        
+        printWindow.document.write(html);
+        printWindow.document.close();
+    }
+}
+
+// Initialize the survey manager when the page loads
+document.addEventListener('DOMContentLoaded', () => {
+    window.surveyManager = new SurveyManager();
+    console.log('✅ Survey Manager initialized');
+});
+
+// Export for use in other modules
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = SurveyManager;
+}
