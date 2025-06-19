@@ -29,46 +29,54 @@ def extract_question_type_from_event(event):
     """
     question_type = None
     
-    logger.info(f"Extracting question type from event: {json.dumps(event, default=str)}")
+    logger.info(f"=== EXTRACTING QUESTION TYPE ===")
+    logger.info(f"Event keys: {list(event.keys())}")
+    logger.info(f"Event type: {type(event)}")
     
     # Method 1: API Gateway Proxy Integration - queryStringParameters
     if 'queryStringParameters' in event:
         query_params = event['queryStringParameters']
+        logger.info(f"queryStringParameters: {query_params}")
         if query_params and isinstance(query_params, dict):
             question_type = query_params.get('type')
-            logger.info(f"Found type in queryStringParameters: {question_type}")
+            if question_type:
+                logger.info(f"✅ Found type in queryStringParameters: {question_type}")
     
     # Method 2: API Gateway Proxy Integration - multiValueQueryStringParameters  
     if not question_type and 'multiValueQueryStringParameters' in event:
         multi_params = event['multiValueQueryStringParameters']
+        logger.info(f"multiValueQueryStringParameters: {multi_params}")
         if multi_params and isinstance(multi_params, dict) and 'type' in multi_params:
             if isinstance(multi_params['type'], list) and multi_params['type']:
                 question_type = multi_params['type'][0]
-                logger.info(f"Found type in multiValueQueryStringParameters: {question_type}")
+                logger.info(f"✅ Found type in multiValueQueryStringParameters: {question_type}")
     
     # Method 3: Parse from raw query string if available
     if not question_type and 'rawQueryString' in event:
         raw_query = event['rawQueryString']
+        logger.info(f"rawQueryString: {raw_query}")
         if raw_query:
             try:
                 parsed_query = urllib.parse.parse_qs(raw_query)
                 if 'type' in parsed_query and parsed_query['type']:
                     question_type = parsed_query['type'][0]
-                    logger.info(f"Found type in rawQueryString: {question_type}")
+                    logger.info(f"✅ Found type in rawQueryString: {question_type}")
             except Exception as e:
                 logger.warning(f"Failed to parse rawQueryString: {e}")
     
     # Method 4: Check in path parameters (alternative API design)
     if not question_type and 'pathParameters' in event:
         path_params = event['pathParameters']
+        logger.info(f"pathParameters: {path_params}")
         if path_params and isinstance(path_params, dict):
             question_type = path_params.get('type')
-            logger.info(f"Found type in pathParameters: {question_type}")
+            if question_type:
+                logger.info(f"✅ Found type in pathParameters: {question_type}")
     
     # Method 5: Direct parameter in event (for testing/direct invocation)
     if not question_type and 'type' in event:
         question_type = event['type']
-        logger.info(f"Found type in direct event: {question_type}")
+        logger.info(f"✅ Found type in direct event: {question_type}")
     
     # Method 6: Check in HTTP method context (if present)
     if not question_type and 'requestContext' in event:
@@ -78,10 +86,11 @@ def extract_question_type_from_event(event):
             if 'queryString' in http_context:
                 try:
                     query_string = http_context['queryString']
+                    logger.info(f"requestContext.http.queryString: {query_string}")
                     parsed_query = urllib.parse.parse_qs(query_string)
                     if 'type' in parsed_query and parsed_query['type']:
                         question_type = parsed_query['type'][0]
-                        logger.info(f"Found type in requestContext.http.queryString: {question_type}")
+                        logger.info(f"✅ Found type in requestContext.http.queryString: {question_type}")
                 except Exception as e:
                     logger.warning(f"Failed to parse query string from requestContext: {e}")
     
@@ -97,11 +106,11 @@ def extract_question_type_from_event(event):
                 
                 if isinstance(body_data, dict) and 'type' in body_data:
                     question_type = body_data['type']
-                    logger.info(f"Found type in request body: {question_type}")
+                    logger.info(f"✅ Found type in request body: {question_type}")
         except Exception as e:
             logger.debug(f"Failed to parse body for type parameter: {e}")
     
-    logger.info(f"Final extracted question_type: {question_type}")
+    logger.info(f"=== FINAL EXTRACTED QUESTION TYPE: {question_type} ===")
     return question_type
 
 def lambda_handler(event, context):
@@ -118,8 +127,9 @@ def lambda_handler(event, context):
     """
     try:
         logger.info(f"=== GET QUESTIONS REQUEST START ===")
-        logger.info(f"Received event keys: {list(event.keys())}")
-        logger.info(f"Event type: {type(event)}")
+        logger.info(f"Function: {context.function_name if context else 'TEST'}")
+        logger.info(f"Request ID: {context.aws_request_id if context else 'TEST'}")
+        logger.info(f"Event structure: {json.dumps(event, default=str, indent=2)}")
         
         # Extract the question type using robust method
         question_type = extract_question_type_from_event(event)
@@ -130,8 +140,15 @@ def lambda_handler(event, context):
                 'error': 'Missing required parameter: type',
                 'message': 'Please specify type=company or type=employee in query parameters',
                 'received_event_keys': list(event.keys()),
-                'event_sample': {k: str(v)[:200] + ('...' if len(str(v)) > 200 else '') 
-                               for k, v in event.items() if k in ['queryStringParameters', 'pathParameters', 'rawQueryString']},
+                'debug_info': {
+                    'queryStringParameters': event.get('queryStringParameters'),
+                    'multiValueQueryStringParameters': event.get('multiValueQueryStringParameters'),
+                    'pathParameters': event.get('pathParameters'),
+                    'rawQueryString': event.get('rawQueryString'),
+                    'httpMethod': event.get('httpMethod'),
+                    'resource': event.get('resource'),
+                    'path': event.get('path')
+                },
                 'help': 'Use: GET /questions?type=company or GET /questions?type=employee'
             }
             logger.error(f"Missing 'type' query parameter. Debug info: {json.dumps(error_details, indent=2)}")
@@ -153,42 +170,71 @@ def lambda_handler(event, context):
         logger.info(f"Reading questions from {csv_key}")
         questions = s3_utils.read_csv_file(csv_key)
         
+        logger.info(f"Raw CSV data loaded: {len(questions)} rows")
+        if questions:
+            logger.info(f"First CSV row keys: {list(questions[0].keys())}")
+            logger.info(f"First CSV row sample: {json.dumps(questions[0], default=str)}")
+        
         # Process questions to ensure proper data types
         processed_questions = []
-        for question in questions:
-            processed_question = {
-                'id': question.get('id', ''),
-                'text': question.get('text', ''),
-                'type': question.get('type', 'text'),
-                'section': question.get('section', ''),
-                'required': question.get('required', '').lower() in ['true', '1', 'yes'],
-                'options': []
-            }
-            
-            # Parse options if they exist
-            options_str = question.get('options', '')
-            if options_str:
-                # Split options by semicolon or pipe
-                if ';' in options_str:
-                    processed_question['options'] = [opt.strip() for opt in options_str.split(';') if opt.strip()]
-                elif '|' in options_str:
-                    processed_question['options'] = [opt.strip() for opt in options_str.split('|') if opt.strip()]
-                else:
-                    processed_question['options'] = [options_str.strip()]
-            
-            processed_questions.append(processed_question)
+        for i, question in enumerate(questions):
+            try:
+                processed_question = {
+                    'id': str(question.get('id', '')).strip(),
+                    'text': str(question.get('text', '')).strip(),
+                    'type': str(question.get('type', 'text')).strip(),
+                    'section': str(question.get('section', '')).strip(),
+                    'required': str(question.get('required', '')).lower().strip() in ['true', '1', 'yes'],
+                    'options': []
+                }
+                
+                # Parse options if they exist
+                options_str = str(question.get('options', '')).strip()
+                if options_str and options_str.lower() not in ['', 'none', 'null']:
+                    # Split options by semicolon or pipe
+                    if ';' in options_str:
+                        processed_question['options'] = [opt.strip() for opt in options_str.split(';') if opt.strip()]
+                    elif '|' in options_str:
+                        processed_question['options'] = [opt.strip() for opt in options_str.split('|') if opt.strip()]
+                    else:
+                        processed_question['options'] = [options_str.strip()]
+                
+                # Only add questions with valid IDs
+                if processed_question['id']:
+                    processed_questions.append(processed_question)
+                    logger.debug(f"Processed question {i+1}: {processed_question['id']}")
+                
+            except Exception as e:
+                logger.warning(f"Error processing question {i}: {e}. Question data: {question}")
+                continue
         
-        logger.info(f"Successfully retrieved {len(processed_questions)} questions for {question_type}")
+        logger.info(f"Successfully processed {len(processed_questions)} questions for {question_type}")
+        
+        if not processed_questions:
+            logger.error(f"No valid questions found in {csv_key}")
+            return lambda_response(404, {
+                'error': 'No questions found',
+                'message': f'No valid questions available for type: {question_type}',
+                'csv_key': csv_key
+            })
         
         # Return successful response
         response_data = {
             'type': question_type,
             'questions': processed_questions,
             'total_questions': len(processed_questions),
-            'timestamp': context.aws_request_id if context else None
+            'timestamp': context.aws_request_id if context else 'test',
+            'success': True
         }
         
-        return lambda_response(200, response_data)
+        logger.info(f"Returning response with {len(processed_questions)} questions")
+        logger.info(f"Response data keys: {list(response_data.keys())}")
+        logger.info(f"Questions field type: {type(response_data['questions'])}")
+        
+        final_response = lambda_response(200, response_data)
+        logger.info(f"Final response structure: {json.dumps({k: str(v)[:100] + '...' if len(str(v)) > 100 else v for k, v in final_response.items()}, indent=2)}")
+        
+        return final_response
         
     except FileNotFoundError as e:
         logger.error(f"Questions file not found: {str(e)}")
@@ -203,7 +249,8 @@ def lambda_handler(event, context):
         return lambda_response(500, {
             'error': 'Internal server error',
             'message': 'Failed to retrieve questions',
-            'request_id': context.aws_request_id if context else None
+            'request_id': context.aws_request_id if context else None,
+            'debug_info': str(e)
         })
 
 
