@@ -729,8 +729,8 @@ class SurveyManager {
             // Save to S3 via API
             await window.bakshAPI.saveResponse(draftData);
             
-            // Also save to localStorage as backup
-            const draftKey = `baksh-survey-draft-${this.currentSurvey.type}-${this.currentSurvey.companyId}`;
+            // Also save to localStorage as backup - FIXED: Use let instead of const
+            let draftKey = `baksh-survey-draft-${this.currentSurvey.type}-${this.currentSurvey.companyId}`;
             if (this.currentSurvey.employeeId) {
                 draftKey += `-${this.currentSurvey.employeeId}`;
             }
@@ -770,8 +770,8 @@ class SurveyManager {
             console.log('No existing S3 response found:', error.message);
         }
         
-        // Fallback to localStorage (draft responses)
-        const draftKey = `baksh-survey-draft-${this.currentSurvey.type}-${this.currentSurvey.companyId}`;
+        // Fallback to localStorage (draft responses) - FIXED: Use let instead of const
+        let draftKey = `baksh-survey-draft-${this.currentSurvey.type}-${this.currentSurvey.companyId}`;
         if (this.currentSurvey.employeeId) {
             draftKey += `-${this.currentSurvey.employeeId}`;
         }
@@ -817,8 +817,8 @@ class SurveyManager {
         // Show success screen
         document.getElementById('success-screen').classList.remove('hidden');
         
-        // Clear draft data
-        const draftKey = `baksh-survey-draft-${this.currentSurvey.type}-${this.currentSurvey.companyId}`;
+        // Clear draft data - FIXED: Use let instead of const
+        let draftKey = `baksh-survey-draft-${this.currentSurvey.type}-${this.currentSurvey.companyId}`;
         if (this.currentSurvey.employeeId) {
             draftKey += `-${this.currentSurvey.employeeId}`;
         }
