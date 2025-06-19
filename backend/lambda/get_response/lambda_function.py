@@ -95,12 +95,12 @@ def lambda_handler(event, context):
                 'received_params': list(query_params.keys())
             })
         
-        # Sanitize IDs
+        # Sanitize IDs (remove special characters)
         company_id = ''.join(c for c in company_id if c.isalnum() or c in '-_')
         if employee_id:
-            employee_id = ''.join(c for c in employee_id if c.isalnum() or c in '-_.')
+            employee_id = ''.join(c for c in employee_id if c.isalnum() or c in '-_')
         
-        logger.info(f"Getting {response_type} response for company: {company_id}, employee: {employee_id or 'N/A'}")
+        logger.info(f"Looking for {response_type} response: company={company_id}, employee={employee_id or 'N/A'}")
         
         # Determine storage path
         if response_type == 'company':
@@ -111,30 +111,27 @@ def lambda_handler(event, context):
         # Try to read the response from S3
         try:
             response_data = s3_utils.read_json_file(json_key)
+            
             logger.info(f"Found existing response at {json_key}")
             
             # Return the response data
             return lambda_response(200, {
-                'found': True,
+                'message': 'Response found',
                 'type': response_type,
                 'company_id': company_id,
                 'employee_id': employee_id,
-                'responses': response_data.get('responses', {}),
-                'submitted_at': response_data.get('submitted_at'),
-                'updated_at': response_data.get('updated_at'),
-                'files': response_data.get('files', []),
+                'data': response_data,
                 'storage_path': json_key,
                 'request_id': context.aws_request_id if context else None
             })
             
         except Exception as e:
-            # Check if it's a "not found" error vs other errors
-            error_str = str(e).lower()
-            if 'nosuchkey' in error_str or 'not found' in error_str or '404' in error_str:
+            # If file doesn't exist or can't be read, return 404
+            if 'NoSuchKey' in str(e) or 'not found' in str(e).lower():
                 logger.info(f"No existing response found at {json_key}")
                 return lambda_response(404, {
-                    'found': False,
-                    'message': 'No existing response found',
+                    'error': 'Response not found',
+                    'message': f'No existing {response_type} response found for the specified parameters',
                     'type': response_type,
                     'company_id': company_id,
                     'employee_id': employee_id,
@@ -142,15 +139,15 @@ def lambda_handler(event, context):
                     'request_id': context.aws_request_id if context else None
                 })
             else:
-                # Some other error occurred
-                logger.error(f"Error reading response from S3: {e}")
+                # Other S3 errors
+                logger.error(f"Error reading response from S3: {str(e)}")
                 raise e
         
     except Exception as e:
         logger.error(f"Unexpected error: {str(e)}", exc_info=True)
         return lambda_response(500, {
             'error': 'Internal server error',
-            'message': 'Failed to get response',
+            'message': 'Failed to retrieve response',
             'request_id': context.aws_request_id if context else None,
             'error_details': str(e) if log_level == 'DEBUG' else 'Enable DEBUG logging for details'
         })
@@ -160,7 +157,7 @@ def lambda_handler(event, context):
 if __name__ == "__main__":
     # Test events for different scenarios
     test_events = [
-        # API Gateway format - company response
+        # Company response lookup
         {
             'httpMethod': 'GET',
             'queryStringParameters': {
@@ -168,7 +165,7 @@ if __name__ == "__main__":
                 'company_id': 'test-company-123'
             }
         },
-        # API Gateway format - employee response
+        # Employee response lookup
         {
             'httpMethod': 'GET',
             'queryStringParameters': {
@@ -177,23 +174,19 @@ if __name__ == "__main__":
                 'employee_id': 'john.doe'
             }
         },
-        # Direct invocation format
+        # Missing parameters
         {
-            'query': {
-                'type': 'company',
-                'company_id': 'direct-test-company'
+            'httpMethod': 'GET',
+            'queryStringParameters': {
+                'type': 'company'
+                # Missing company_id
             }
         },
-        # Invalid - missing type
+        # Invalid type
         {
+            'httpMethod': 'GET',
             'queryStringParameters': {
-                'company_id': 'test-company'
-            }
-        },
-        # Invalid - missing employee_id for employee type
-        {
-            'queryStringParameters': {
-                'type': 'employee',
+                'type': 'invalid',
                 'company_id': 'test-company'
             }
         }
@@ -206,7 +199,7 @@ if __name__ == "__main__":
             self.function_version = '$LATEST'
             self.memory_limit_in_mb = 512
             self.remaining_time_in_millis = 60000
-            self.aws_request_id = 'test-request-id-' + str(hash(str(datetime.now())))[:8]
+            self.aws_request_id = 'test-request-id-12345'
     
     # Set environment variables for testing
     os.environ['SURVEY_BUCKET'] = 'test-bucket'
@@ -215,7 +208,7 @@ if __name__ == "__main__":
     # Run tests
     for i, test_event in enumerate(test_events):
         print(f"\n{'='*60}")
-        print(f"TEST {i+1}: {test_event.get('httpMethod', 'Direct')} - Type: {test_event.get('queryStringParameters', test_event.get('query', {})).get('type', 'Missing')}")
+        print(f"TEST {i+1}: {test_event.get('httpMethod', 'GET')} - {test_event.get('queryStringParameters', {}).get('type', 'Unknown type')}")
         print('='*60)
         result = lambda_handler(test_event, MockContext())
         print(json.dumps(result, indent=2, default=str))
