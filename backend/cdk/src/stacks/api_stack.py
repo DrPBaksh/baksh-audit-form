@@ -64,7 +64,24 @@ class ApiStack(Stack):
             function_name=f"{prefix}-save-response"
         )
 
-        # 4️⃣ API Gateway REST API with CORS
+        # 4️⃣ Lambda function to get existing responses
+        get_response_function = _lambda.Function(self, "GetResponseFunction",
+            runtime=_lambda.Runtime.PYTHON_3_11,
+            handler="lambda_function.lambda_handler",
+            code=_lambda.Code.from_asset("../lambda/get_response"),
+            role=infra_stack.get_response_role,
+            layers=[shared_layer],
+            environment={
+                "SURVEY_BUCKET": infra_stack.survey_bucket.bucket_name,
+                "LOG_LEVEL": "INFO"
+            },
+            timeout=Duration.seconds(30),
+            memory_size=256,
+            log_retention=logs.RetentionDays.ONE_WEEK,
+            function_name=f"{prefix}-get-response"
+        )
+
+        # 5️⃣ API Gateway REST API with CORS
         api = apigateway.RestApi(self, "SurveyApi",
             rest_api_name=f"{prefix}-api",
             description="Baksh Audit Form Survey API",
@@ -82,7 +99,7 @@ class ApiStack(Stack):
             )
         )
 
-        # 5️⃣ API Resources and Methods with PROPER Proxy Integration
+        # 6️⃣ API Resources and Methods with PROPER Proxy Integration
         
         # /questions resource
         questions_resource = api.root.add_resource("questions")
@@ -100,19 +117,27 @@ class ApiStack(Stack):
         responses_resource = api.root.add_resource("responses")
         
         # POST /responses - SIMPLIFIED proxy integration (no explicit responses)
-        responses_integration = apigateway.LambdaIntegration(
+        save_responses_integration = apigateway.LambdaIntegration(
             save_response_function,
             proxy=True  # Pure proxy integration - let Lambda handle everything
         )
         
-        responses_resource.add_method("POST", responses_integration)
+        responses_resource.add_method("POST", save_responses_integration)
 
-        # 6️⃣ FORCED API Gateway Deployment with unique identifier
+        # GET /responses - NEW: Add missing GET method for retrieving existing responses
+        get_responses_integration = apigateway.LambdaIntegration(
+            get_response_function,
+            proxy=True  # Pure proxy integration - let Lambda handle everything
+        )
+        
+        responses_resource.add_method("GET", get_responses_integration)
+
+        # 7️⃣ FORCED API Gateway Deployment with unique identifier
         # This ensures a new deployment is created every time CDK runs
         
         # Create a unique deployment identifier based on function code hashes
         deployment_hash = hashlib.md5(
-            f"{get_questions_function.function_name}-{save_response_function.function_name}-{cdk.Aws.STACK_NAME}".encode()
+            f"{get_questions_function.function_name}-{save_response_function.function_name}-{get_response_function.function_name}-{cdk.Aws.STACK_NAME}".encode()
         ).hexdigest()[:8]
         
         deployment = apigateway.Deployment(self, f"SurveyApiDeployment{deployment_hash}",
@@ -130,7 +155,7 @@ class ApiStack(Stack):
             description=f"Baksh Audit Form Survey API - {environment} stage"
         )
 
-        # 7️⃣ Outputs
+        # 8️⃣ Outputs
         CfnOutput(self, "ApiUrl",
             description="Survey API Gateway URL",
             value=f"https://{api.rest_api_id}.execute-api.{self.region}.amazonaws.com/{environment}"
@@ -144,6 +169,11 @@ class ApiStack(Stack):
         CfnOutput(self, "SaveResponseFunctionName",
             description="Save Response Lambda function name",
             value=save_response_function.function_name
+        )
+        
+        CfnOutput(self, "GetResponseFunctionName",
+            description="Get Response Lambda function name",
+            value=get_response_function.function_name
         )
         
         CfnOutput(self, "ApiDeploymentId",
