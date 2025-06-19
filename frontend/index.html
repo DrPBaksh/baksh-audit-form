@@ -233,9 +233,121 @@
                     </div>
                 </div>
                 
-                <!-- More content to be added in next commits... -->
-                <div class="text-center py-8">
-                    <p class="text-gray-500 dark:text-gray-400">Assessment cards coming in next commit...</p>
+                <!-- Assessment Cards -->
+                <div class="grid lg:grid-cols-2 gap-8 md:gap-12 max-w-5xl mx-auto">
+                    <!-- Company Assessment Card -->
+                    <div class="card group hover:shadow-2xl transition-all duration-500 overflow-hidden">
+                        <div class="p-8 md:p-10">
+                            <div class="text-center space-y-6">
+                                <!-- Icon -->
+                                <div class="relative">
+                                    <div class="w-20 h-20 md:w-24 md:h-24 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl flex items-center justify-center mx-auto shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
+                                        <i class="fas fa-building text-white text-2xl md:text-3xl"></i>
+                                    </div>
+                                    <div class="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center">
+                                        <i class="fas fa-star text-white text-xs"></i>
+                                    </div>
+                                </div>
+                                
+                                <!-- Content -->
+                                <div class="space-y-4">
+                                    <h3 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
+                                        Organizational Assessment
+                                    </h3>
+                                    <p class="text-gray-600 dark:text-gray-300 leading-relaxed responsive-text">
+                                        Comprehensive evaluation of your company's AI strategy, data governance, 
+                                        technology infrastructure, and organizational readiness for digital transformation
+                                    </p>
+                                </div>
+                                
+                                <!-- Features -->
+                                <div class="grid grid-cols-1 gap-3 text-left">
+                                    <div class="flex items-center space-x-3 p-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg">
+                                        <i class="fas fa-chess-king text-primary-600 dark:text-primary-400"></i>
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">AI Strategy & Leadership</span>
+                                    </div>
+                                    <div class="flex items-center space-x-3 p-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg">
+                                        <i class="fas fa-database text-primary-600 dark:text-primary-400"></i>
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Data Governance & Quality</span>
+                                    </div>
+                                    <div class="flex items-center space-x-3 p-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg">
+                                        <i class="fas fa-cogs text-primary-600 dark:text-primary-400"></i>
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Technology Infrastructure</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- CTA Button -->
+                                <button onclick="startCompanyAssessment()" 
+                                        class="w-full btn-primary group-hover:shadow-2xl">
+                                    <i class="fas fa-play mr-2"></i>
+                                    Start Company Assessment
+                                </button>
+                                
+                                <!-- Time estimate -->
+                                <div class="flex items-center justify-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+                                    <i class="fas fa-stopwatch"></i>
+                                    <span>Estimated time: 12-15 minutes</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Employee Assessment Card -->
+                    <div class="card group hover:shadow-2xl transition-all duration-500 overflow-hidden">
+                        <div class="p-8 md:p-10">
+                            <div class="text-center space-y-6">
+                                <!-- Icon -->
+                                <div class="relative">
+                                    <div class="w-20 h-20 md:w-24 md:h-24 bg-gradient-to-br from-accent-500 to-accent-700 rounded-2xl flex items-center justify-center mx-auto shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
+                                        <i class="fas fa-users text-white text-2xl md:text-3xl"></i>
+                                    </div>
+                                    <div class="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-r from-pink-400 to-purple-500 rounded-full flex items-center justify-center">
+                                        <i class="fas fa-user text-white text-xs"></i>
+                                    </div>
+                                </div>
+                                
+                                <!-- Content -->
+                                <div class="space-y-4">
+                                    <h3 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
+                                        Individual Assessment
+                                    </h3>
+                                    <p class="text-gray-600 dark:text-gray-300 leading-relaxed responsive-text">
+                                        Personal evaluation of AI familiarity, current tool usage, training needs, 
+                                        and individual readiness for AI-powered workflows and automation
+                                    </p>
+                                </div>
+                                
+                                <!-- Features -->
+                                <div class="grid grid-cols-1 gap-3 text-left">
+                                    <div class="flex items-center space-x-3 p-3 bg-accent-50 dark:bg-accent-900/20 rounded-lg">
+                                        <i class="fas fa-tools text-accent-600 dark:text-accent-400"></i>
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Current AI Tool Usage</span>
+                                    </div>
+                                    <div class="flex items-center space-x-3 p-3 bg-accent-50 dark:bg-accent-900/20 rounded-lg">
+                                        <i class="fas fa-graduation-cap text-accent-600 dark:text-accent-400"></i>
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Training & Development Needs</span>
+                                    </div>
+                                    <div class="flex items-center space-x-3 p-3 bg-accent-50 dark:bg-accent-900/20 rounded-lg">
+                                        <i class="fas fa-robot text-accent-600 dark:text-accent-400"></i>
+                                        <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Automation Opportunities</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- CTA Button -->
+                                <button onclick="startEmployeeAssessment()" 
+                                        class="w-full btn-secondary group-hover:shadow-2xl">
+                                    <i class="fas fa-user-plus mr-2"></i>
+                                    Start Individual Assessment
+                                </button>
+                                
+                                <!-- Time estimate -->
+                                <div class="flex items-center justify-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+                                    <i class="fas fa-stopwatch"></i>
+                                    <span>Estimated time: 8-10 minutes</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
             
