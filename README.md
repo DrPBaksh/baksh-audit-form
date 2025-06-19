@@ -18,6 +18,13 @@ chmod +x backend/deploy.sh
 ./backend/deploy.sh --owner=your-name
 ```
 
+### Test Your Deployment
+```bash
+# Automatically test all API endpoints
+chmod +x run_tests.sh
+./run_tests.sh
+```
+
 ### Destroy
 ```bash
 ./backend/destroy.sh --owner=your-name
@@ -31,6 +38,7 @@ chmod +x backend/deploy.sh
 - 📱 **Mobile Responsive** - Works seamlessly on all devices
 - 🔒 **Secure** - AWS-native security with IAM least privilege
 - ⚡ **Serverless** - Cost-effective, auto-scaling architecture
+- 🧪 **Automated Testing** - Comprehensive API validation suite
 
 ## 🏗️ Architecture
 
@@ -75,6 +83,29 @@ S3 Bucket Structure:
 └── website/ (static frontend files)
 ```
 
+## 🧪 Testing & Validation
+
+### Automated API Testing
+After deployment, validate all functionality:
+```bash
+# Run comprehensive test suite
+./run_tests.sh
+
+# Manual testing with specific API URL
+python3 test_api.py --api-url https://your-api-url.com/dev
+```
+
+**What gets tested:**
+- ✅ Company question retrieval
+- ✅ Employee question retrieval
+- ✅ Response saving with file uploads
+- ✅ Error handling and validation
+- ✅ Performance and response times
+
+**Expected Results:** 7/10 tests pass (3 expected failures for error validation)
+
+See [API_TESTING.md](API_TESTING.md) for detailed testing documentation.
+
 ## 🔧 Development
 
 ### Local Testing
@@ -94,9 +125,58 @@ Edit CSV files in `/data/` directory and run:
 python backend/setup_questions.py --upload
 ```
 
+### Continuous Integration
+```bash
+# Deploy and test in one command
+cd backend && ./deploy.sh --owner=pete && cd .. && ./run_tests.sh
+```
+
+## 🔍 Troubleshooting
+
+### Common Issues
+- **"Failed to load survey"**: Check Lambda function logs and S3 bucket contents
+- **CORS errors**: Verify API Gateway CORS configuration
+- **File upload failures**: Check Lambda memory limits and timeout settings
+- **Test failures**: Review deployment outputs and AWS resource permissions
+
+### Debugging Commands
+```bash
+# Check deployment outputs
+cat backend/cdk/api-outputs.json
+
+# View Lambda logs
+aws logs tail /aws/lambda/baksh-audit-*-get-questions --follow
+
+# Test API endpoints directly
+curl "$(cat backend/cdk/api-outputs.json | python3 -c "import json,sys; data=json.load(sys.stdin); print([v.get('ApiUrl') for v in data.values() if v.get('ApiUrl')][0])")/questions?type=company"
+```
+
+## 📊 Project Structure
+
+```
+baksh-audit-form/
+├── backend/                 # AWS CDK infrastructure
+│   ├── cdk/                # CDK Python code
+│   ├── lambda/             # Lambda function code
+│   ├── deploy.sh           # Deployment script
+│   └── api-outputs.json    # Generated deployment outputs
+├── frontend/               # Static website files
+│   ├── js/                 # JavaScript application
+│   ├── css/                # Stylesheets
+│   └── index.html          # Main entry point
+├── data/                   # Survey questions (CSV)
+├── test_api.py             # API test suite
+├── run_tests.sh            # Automated test runner
+└── API_TESTING.md          # Testing documentation
+```
+
 ## 📞 Support
 
-For issues or questions, please open an issue in this repository.
+For issues or questions:
+1. Check the [API_TESTING.md](API_TESTING.md) troubleshooting section
+2. Run `./run_tests.sh` to validate your deployment
+3. Review CloudWatch logs for detailed error information
+4. Open an issue in this repository with test results
 
 ---
 
