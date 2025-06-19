@@ -258,11 +258,21 @@
                                 <div id="file-list" class="space-y-2">
                                     <!-- Uploaded files will appear here -->
                                 </div>
+                                
+                                <!-- Visual indicator to scroll down -->
+                                <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                    <div class="flex items-center text-blue-800 text-sm">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+                                        </svg>
+                                        <span class="font-medium">Scroll down to find the Submit buttons after uploading your files</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         
                         <!-- Submit Section -->
-                        <div class="mt-8 flex justify-between">
+                        <div class="mt-8 flex justify-between border-t border-gray-200 pt-6">
                             <button type="button" 
                                     onclick="goBack()" 
                                     class="bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium py-3 px-6 rounded-lg transition-colors duration-200">
