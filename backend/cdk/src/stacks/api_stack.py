@@ -81,31 +81,73 @@ class ApiStack(Stack):
             )
         )
 
-        # 5️⃣ API Resources and Methods with Proxy Integration
+        # 5️⃣ API Resources and Methods with FIXED Proxy Integration
         
         # /questions resource
         questions_resource = api.root.add_resource("questions")
         
         # GET /questions (with query parameter ?type=company|employee)
-        # Using proxy integration - this passes through Lambda response headers
+        # FIXED: Using LambdaIntegration with proper proxy configuration
         questions_integration = apigateway.LambdaIntegration(
             get_questions_function,
-            proxy=True  # Enable proxy integration for proper CORS handling
+            proxy=True,
+            integration_responses=[
+                apigateway.IntegrationResponse(
+                    status_code="200",
+                    response_parameters={
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                        "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+                        "method.response.header.Access-Control-Allow-Methods": "'GET,POST,OPTIONS'"
+                    }
+                )
+            ]
         )
         
-        questions_resource.add_method("GET", questions_integration)
+        questions_resource.add_method("GET", questions_integration,
+            method_responses=[
+                apigateway.MethodResponse(
+                    status_code="200",
+                    response_parameters={
+                        "method.response.header.Access-Control-Allow-Origin": True,
+                        "method.response.header.Access-Control-Allow-Headers": True,
+                        "method.response.header.Access-Control-Allow-Methods": True
+                    }
+                )
+            ]
+        )
 
         # /responses resource
         responses_resource = api.root.add_resource("responses")
         
         # POST /responses
-        # Using proxy integration - this passes through Lambda response headers
+        # FIXED: Using LambdaIntegration with proper proxy configuration
         responses_integration = apigateway.LambdaIntegration(
             save_response_function,
-            proxy=True  # Enable proxy integration for proper CORS handling
+            proxy=True,
+            integration_responses=[
+                apigateway.IntegrationResponse(
+                    status_code="200",
+                    response_parameters={
+                        "method.response.header.Access-Control-Allow-Origin": "'*'",
+                        "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
+                        "method.response.header.Access-Control-Allow-Methods": "'GET,POST,OPTIONS'"
+                    }
+                )
+            ]
         )
         
-        responses_resource.add_method("POST", responses_integration)
+        responses_resource.add_method("POST", responses_integration,
+            method_responses=[
+                apigateway.MethodResponse(
+                    status_code="200",
+                    response_parameters={
+                        "method.response.header.Access-Control-Allow-Origin": True,
+                        "method.response.header.Access-Control-Allow-Headers": True,
+                        "method.response.header.Access-Control-Allow-Methods": True
+                    }
+                )
+            ]
+        )
 
         # 6️⃣ API Gateway Deployment (manual configuration to avoid conflicts)
         deployment = apigateway.Deployment(self, "SurveyApiDeployment",
