@@ -23,6 +23,9 @@ chmod +x backend/deploy.sh
 # Automatically test all API endpoints
 chmod +x run_tests.sh
 ./run_tests.sh
+
+# Quick diagnostic for survey loading issues
+python3 diagnose_api.py https://your-api-url.com/dev
 ```
 
 ### Destroy
@@ -91,6 +94,9 @@ After deployment, validate all functionality:
 # Run comprehensive test suite
 ./run_tests.sh
 
+# Quick diagnostics for survey loading issues
+python3 diagnose_api.py https://your-api-url.com/dev
+
 # Manual testing with specific API URL
 python3 test_api.py --api-url https://your-api-url.com/dev
 ```
@@ -134,8 +140,28 @@ cd backend && ./deploy.sh --owner=pete && cd .. && ./run_tests.sh
 ## 🔍 Troubleshooting
 
 ### Common Issues
-- **"Failed to load survey"**: Check Lambda function logs and S3 bucket contents
-- **CORS errors**: Verify API Gateway CORS configuration
+
+#### "Failed to load survey: Invalid questions format received from server"
+This error indicates the frontend isn't receiving the expected questions data structure.
+
+**Diagnosis Steps:**
+1. **Quick Check**: Run the diagnostic script
+   ```bash
+   python3 diagnose_api.py https://your-api-url.com/dev
+   ```
+
+2. **Backend Issues** (if diagnostic fails):
+   - Redeploy the backend: `cd backend && ./deploy.sh --owner=your-name`
+   - Check Lambda logs: `aws logs tail /aws/lambda/baksh-audit-*-get-questions --follow`
+   - Verify S3 questions files exist: Check S3 bucket for `questions/company_questions.csv`
+
+3. **Frontend Issues** (if diagnostic passes):
+   - Check browser console for JavaScript errors
+   - Verify `frontend/js/config.js` has correct API URL
+   - Clear browser cache and reload
+
+#### Other Common Issues
+- **CORS errors**: Verify API Gateway CORS configuration in CDK
 - **File upload failures**: Check Lambda memory limits and timeout settings
 - **Test failures**: Review deployment outputs and AWS resource permissions
 
@@ -149,7 +175,17 @@ aws logs tail /aws/lambda/baksh-audit-*-get-questions --follow
 
 # Test API endpoints directly
 curl "$(cat backend/cdk/api-outputs.json | python3 -c "import json,sys; data=json.load(sys.stdin); print([v.get('ApiUrl') for v in data.values() if v.get('ApiUrl')][0])")/questions?type=company"
+
+# Quick diagnosis
+python3 diagnose_api.py https://your-api-url.com/dev
 ```
+
+### Deployment Issues
+If deployment fails:
+1. Check AWS credentials are configured
+2. Ensure CDK is bootstrapped: `cd backend/cdk && cdk bootstrap`
+3. Verify Python virtual environment: `cd backend/cdk && source .venv/bin/activate`
+4. Check CloudFormation stack events in AWS Console
 
 ## 📊 Project Structure
 
@@ -166,6 +202,7 @@ baksh-audit-form/
 │   └── index.html          # Main entry point
 ├── data/                   # Survey questions (CSV)
 ├── test_api.py             # API test suite
+├── diagnose_api.py         # Quick diagnostics script
 ├── run_tests.sh            # Automated test runner
 └── API_TESTING.md          # Testing documentation
 ```
@@ -173,10 +210,24 @@ baksh-audit-form/
 ## 📞 Support
 
 For issues or questions:
-1. Check the [API_TESTING.md](API_TESTING.md) troubleshooting section
-2. Run `./run_tests.sh` to validate your deployment
+1. **Quick Diagnosis**: Run `python3 diagnose_api.py https://your-api-url.com/dev`
+2. Check the [Troubleshooting](#-troubleshooting) section above
 3. Review CloudWatch logs for detailed error information
-4. Open an issue in this repository with test results
+4. Run `./run_tests.sh` to validate your deployment
+5. Open an issue in this repository with test results
+
+## 🔄 Recent Updates
+
+### v2.1 - Enhanced Error Handling & Debugging
+- **Fixed**: Improved Lambda function event handling for API Gateway proxy integration
+- **Added**: Comprehensive diagnostic script (`diagnose_api.py`)
+- **Enhanced**: Better error messages and logging in Lambda functions
+- **Improved**: Troubleshooting documentation with specific solutions
+
+### Common Solutions Applied
+- **Survey Loading Issues**: Enhanced query parameter extraction in Lambda functions
+- **API Integration**: Improved compatibility with AWS API Gateway proxy integration
+- **Error Diagnostics**: Added detailed logging and structured error responses
 
 ---
 
