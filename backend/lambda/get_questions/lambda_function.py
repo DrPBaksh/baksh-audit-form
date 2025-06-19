@@ -34,17 +34,39 @@ def lambda_handler(event, context):
     - 500: Internal error
     """
     try:
-        logger.info(f"Received event: {json.dumps(event)}")
+        logger.info(f"Received event: {json.dumps(event, default=str)}")
         
-        # Extract query parameters
-        query_params = event.get('queryStringParameters') or {}
-        question_type = query_params.get('type')
+        # Handle different event formats for proxy integration
+        query_params = {}
+        question_type = None
+        
+        # Try multiple ways to extract query parameters
+        if 'queryStringParameters' in event and event['queryStringParameters']:
+            query_params = event['queryStringParameters']
+        elif 'multiValueQueryStringParameters' in event and event['multiValueQueryStringParameters']:
+            # Handle multi-value query parameters
+            multi_params = event['multiValueQueryStringParameters']
+            if 'type' in multi_params and multi_params['type']:
+                question_type = multi_params['type'][0]  # Take first value
+        elif 'type' in event:
+            # Direct parameter (for testing)
+            question_type = event['type']
+        
+        # Extract type from query parameters
+        if not question_type and query_params:
+            question_type = query_params.get('type')
+        
+        # Log what we extracted
+        logger.info(f"Extracted query_params: {query_params}")
+        logger.info(f"Extracted question_type: {question_type}")
         
         if not question_type:
             logger.error("Missing 'type' query parameter")
             return lambda_response(400, {
                 'error': 'Missing required parameter: type',
-                'message': 'Please specify type=company or type=employee'
+                'message': 'Please specify type=company or type=employee',
+                'received_event_keys': list(event.keys()),
+                'query_params': query_params
             })
         
         if question_type not in ['company', 'employee']:
@@ -98,7 +120,7 @@ def lambda_handler(event, context):
         logger.error(f"Questions file not found: {str(e)}")
         return lambda_response(400, {
             'error': 'Questions file not found',
-            'message': f'No questions available for type: {question_type}'
+            'message': f'No questions available for type: {question_type if question_type else "unknown"}'
         })
     
     except Exception as e:
@@ -111,7 +133,7 @@ def lambda_handler(event, context):
 
 # For local testing
 if __name__ == "__main__":
-    # Test event
+    # Test event for company response
     test_event = {
         'queryStringParameters': {
             'type': 'company'
