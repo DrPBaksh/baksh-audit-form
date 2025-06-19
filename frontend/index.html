@@ -1,370 +1,161 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Baksh Audit Form - AI & Data Readiness Survey</title>
+    <title>DMGT AI & Data Readiness Survey</title>
     
-    <!-- Tailwind CSS CDN -->
+    <!-- Tailwind CSS CDN with latest version -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="css/styles.css">
+    <!-- Font Awesome for professional icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Favicon -->
+    <!-- Custom Tailwind Configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a'
+                        },
+                        secondary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1'
+                        },
+                        accent: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857'
+                        }
+                    },
+                    fontFamily: {
+                        'display': ['Inter', 'system-ui', 'sans-serif'],
+                        'body': ['Inter', 'system-ui', 'sans-serif']
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.6s ease-out',
+                        'pulse-soft': 'pulseSoft 2s infinite',
+                        'gradient': 'gradient 6s ease infinite'
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS for animations and dark mode -->
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes pulseSoft {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+        
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .glass-effect {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .dark .glass-effect {
+            background: rgba(17, 24, 39, 0.9);
+            border: 1px solid rgba(55, 65, 81, 0.3);
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 4px;
+        }
+        
+        /* Enhanced button hover effects */
+        .btn-primary {
+            @apply bg-gradient-to-r from-primary-600 to-secondary-600 hover:from-primary-700 hover:to-secondary-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300;
+        }
+        
+        .btn-secondary {
+            @apply bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300;
+        }
+        
+        /* Enhanced form elements */
+        .form-input {
+            @apply w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-all duration-200;
+        }
+        
+        /* Enhanced cards */
+        .card {
+            @apply bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:shadow-xl hover:scale-105;
+        }
+        
+        /* Mobile responsive text */
+        .responsive-text {
+            @apply text-sm sm:text-base lg:text-lg;
+        }
+    </style>
+    
+    <!-- Favicon and Meta tags -->
     <link rel="icon" type="image/png" href="assets/favicon.png">
     
     <!-- Meta tags for SEO -->
-    <meta name="description" content="Professional AI and data readiness survey platform for DMGT">
-    <meta name="keywords" content="AI, data readiness, survey, DMGT, audit, form">
+    <meta name="description" content="Professional AI and data readiness survey platform for DMGT - Assess your organization's AI maturity and employee readiness">
+    <meta name="keywords" content="AI readiness, data maturity, DMGT, survey, audit, assessment, artificial intelligence">
     <meta name="author" content="DMGT">
     
     <!-- Open Graph meta tags -->
-    <meta property="og:title" content="Baksh Audit Form - AI & Data Readiness Survey">
-    <meta property="og:description" content="Professional AI and data readiness survey platform for DMGT">
+    <meta property="og:title" content="DMGT AI & Data Readiness Survey">
+    <meta property="og:description" content="Comprehensive assessment platform for AI and data readiness">
     <meta property="og:type" content="website">
+    <meta property="og:image" content="assets/og-image.png">
 </head>
-<body class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 font-sans">
-    <!-- Navigation Header -->
-    <nav class="bg-white shadow-lg border-b border-slate-200 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0 flex items-center">
-                        <img class="h-8 w-auto" src="assets/logo.png" alt="DMGT" onerror="this.style.display='none'">
-                        <h1 class="ml-3 text-xl font-bold text-gray-900">Baksh Audit Form</h1>
-                    </div>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <span class="text-sm text-gray-500">AI & Data Readiness Survey</span>
-                </div>
-            </div>
-        </div>
-    </nav>
 
-    <!-- Main Content -->
-    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Welcome Screen -->
-        <div id="welcome-screen" class="text-center space-y-8">
-            <div class="bg-white rounded-xl shadow-lg p-8 border border-slate-200">
-                <div class="space-y-6">
-                    <div>
-                        <h1 class="text-4xl font-bold text-gray-900 mb-2">
-                            Welcome to Baksh Audit Form
-                        </h1>
-                        <p class="text-xl text-gray-600">
-                            AI & Data Readiness Assessment for DMGT
-                        </p>
-                    </div>
-                    
-                    <div class="grid md:grid-cols-2 gap-6 mt-8">
-                        <!-- Company Assessment -->
-                        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-200">
-                            <div class="text-center space-y-4">
-                                <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
-                                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H9m0 0H5m4 0v-3.5M9 13h6m-3-7h.01M12 17h.01"></path>
-                                    </svg>
-                                </div>
-                                <h3 class="text-xl font-semibold text-gray-900">Company Assessment</h3>
-                                <p class="text-gray-600">
-                                    Evaluate your organization's AI strategy, data governance, and technology infrastructure
-                                </p>
-                                <button onclick="startCompanyAssessment()" 
-                                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200">
-                                    Start Company Survey
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <!-- Employee Assessment -->
-                        <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-6 border border-green-200">
-                            <div class="text-center space-y-4">
-                                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                                    <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                                    </svg>
-                                </div>
-                                <h3 class="text-xl font-semibold text-gray-900">Employee Assessment</h3>
-                                <p class="text-gray-600">
-                                    Assess individual AI familiarity, training needs, and workflow automation opportunities
-                                </p>
-                                <button onclick="startEmployeeAssessment()" 
-                                        class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200">
-                                    Start Employee Survey
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+<body class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-blue-900 dark:to-indigo-900 font-body antialiased">
+    <!-- Temporary placeholder - will complete in next commits -->
+    <div class="min-h-screen flex items-center justify-center">
+        <div class="text-center">
+            <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">DMGT AI Survey</h1>
+            <p class="text-xl text-gray-600 dark:text-gray-300">Modern UI Update in Progress...</p>
         </div>
-
-        <!-- Company ID Input Screen -->
-        <div id="company-id-screen" class="hidden">
-            <div class="bg-white rounded-xl shadow-lg p-8 border border-slate-200">
-                <div class="max-w-md mx-auto space-y-6">
-                    <div class="text-center">
-                        <h2 class="text-2xl font-bold text-gray-900 mb-2">Company Information</h2>
-                        <p class="text-gray-600">Please enter your company identifier to begin the assessment</p>
-                    </div>
-                    
-                    <div class="space-y-4">
-                        <div>
-                            <label for="company-id-input" class="block text-sm font-medium text-gray-700 mb-2">
-                                Company ID
-                            </label>
-                            <input type="text" 
-                                   id="company-id-input" 
-                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                   placeholder="Enter company ID (e.g., dmgt-london)"
-                                   required>
-                        </div>
-                        
-                        <div class="flex space-x-3">
-                            <button onclick="goBack()" 
-                                    class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium py-3 px-6 rounded-lg transition-colors duration-200">
-                                Back
-                            </button>
-                            <button onclick="proceedWithCompanyId()" 
-                                    class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200">
-                                Continue
-                            </button>
-                        </div>
-                        
-                        <!-- Load Existing Button -->
-                        <div class="text-center pt-4 border-t border-gray-200">
-                            <p class="text-sm text-gray-600 mb-3">Have a partially completed form?</p>
-                            <button onclick="loadExistingCompanyForm()" 
-                                    class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
-                                Load Existing Form
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Employee Information Input Screen -->
-        <div id="employee-id-screen" class="hidden">
-            <div class="bg-white rounded-xl shadow-lg p-8 border border-slate-200">
-                <div class="max-w-md mx-auto space-y-6">
-                    <div class="text-center">
-                        <h2 class="text-2xl font-bold text-gray-900 mb-2">Employee Information</h2>
-                        <p class="text-gray-600">Please enter your details to begin the assessment</p>
-                    </div>
-                    
-                    <div class="space-y-4">
-                        <div>
-                            <label for="emp-company-id-input" class="block text-sm font-medium text-gray-700 mb-2">
-                                Company ID
-                            </label>
-                            <input type="text" 
-                                   id="emp-company-id-input" 
-                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                   placeholder="Enter company ID (e.g., dmgt-london)"
-                                   required>
-                        </div>
-                        
-                        <div>
-                            <label for="employee-name-input" class="block text-sm font-medium text-gray-700 mb-2">
-                                Employee Name
-                            </label>
-                            <input type="text" 
-                                   id="employee-name-input" 
-                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                   placeholder="Enter your full name (e.g., john.smith)"
-                                   required>
-                        </div>
-                        
-                        <div class="flex space-x-3">
-                            <button onclick="goBack()" 
-                                    class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium py-3 px-6 rounded-lg transition-colors duration-200">
-                                Back
-                            </button>
-                            <button onclick="proceedWithEmployeeInfo()" 
-                                    class="flex-1 bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200">
-                                Continue
-                            </button>
-                        </div>
-                        
-                        <!-- Load Existing Button -->
-                        <div class="text-center pt-4 border-t border-gray-200">
-                            <p class="text-sm text-gray-600 mb-3">Have a partially completed form?</p>
-                            <button onclick="loadExistingEmployeeForm()" 
-                                    class="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200">
-                                Load Existing Form
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Survey Form Screen -->
-        <div id="survey-screen" class="hidden">
-            <!-- Loading State -->
-            <div id="loading-indicator" class="text-center py-12">
-                <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                <p class="mt-4 text-gray-600">Loading survey questions...</p>
-            </div>
-            
-            <!-- Survey Form -->
-            <div id="survey-form" class="hidden">
-                <div class="bg-white rounded-xl shadow-lg border border-slate-200">
-                    <!-- Survey Header -->
-                    <div class="border-b border-gray-200 p-6">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <h2 id="survey-title" class="text-2xl font-bold text-gray-900"></h2>
-                                <p id="survey-subtitle" class="text-gray-600 mt-1"></p>
-                            </div>
-                            <div class="text-right">
-                                <div class="text-sm text-gray-500">Progress</div>
-                                <div class="text-lg font-semibold text-blue-600">
-                                    <span id="progress-current">0</span>/<span id="progress-total">0</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Progress Bar -->
-                        <div class="mt-4">
-                            <div class="bg-gray-200 rounded-full h-2">
-                                <div id="progress-bar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Survey Questions -->
-                    <div class="p-6">
-                        <form id="survey-questions-form" class="space-y-8">
-                            <!-- Questions will be dynamically inserted here -->
-                        </form>
-                        
-                        <!-- File Upload for Employee Surveys -->
-                        <div id="file-upload-section" class="hidden mt-8 p-6 bg-gray-50 rounded-lg border border-gray-200">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Document Upload (Optional)</h3>
-                            <p class="text-gray-600 mb-4">You can upload relevant documents to support your responses.</p>
-                            
-                            <div class="space-y-4">
-                                <div>
-                                    <input type="file" 
-                                           id="file-input" 
-                                           multiple 
-                                           accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
-                                           class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                                </div>
-                                
-                                <div id="file-list" class="space-y-2">
-                                    <!-- Uploaded files will appear here -->
-                                </div>
-                                
-                                <!-- Visual indicator to scroll down -->
-                                <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                                    <div class="flex items-center text-blue-800 text-sm">
-                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
-                                        </svg>
-                                        <span class="font-medium">Scroll down to find the Submit buttons after uploading your files</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Submit Section -->
-                        <div class="mt-8 flex justify-between border-t border-gray-200 pt-6">
-                            <button type="button" 
-                                    onclick="goBack()" 
-                                    class="bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium py-3 px-6 rounded-lg transition-colors duration-200">
-                                Back
-                            </button>
-                            
-                            <div class="space-x-3">
-                                <button type="button" 
-                                        onclick="saveDraft()" 
-                                        id="save-draft-button"
-                                        class="bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200">
-                                    Save Progress
-                                </button>
-                                <button type="submit" 
-                                        id="submit-button"
-                                        class="bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200">
-                                    Submit Survey
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Success Screen -->
-        <div id="success-screen" class="hidden text-center">
-            <div class="bg-white rounded-xl shadow-lg p-8 border border-slate-200">
-                <div class="space-y-6">
-                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                    </div>
-                    
-                    <div>
-                        <h2 class="text-2xl font-bold text-gray-900 mb-2">Survey Submitted Successfully!</h2>
-                        <p class="text-gray-600">Thank you for completing the AI & Data Readiness Assessment.</p>
-                    </div>
-                    
-                    <div class="bg-blue-50 rounded-lg p-4">
-                        <p class="text-blue-800 text-sm">
-                            Your responses have been saved and will be reviewed by the appropriate team members.
-                        </p>
-                    </div>
-                    
-                    <button onclick="startOver()" 
-                            class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200">
-                        Start New Assessment
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Form Already Exists Warning Modal -->
-        <div id="form-exists-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white rounded-lg p-6 max-w-md mx-4">
-                <div class="flex items-center mb-4">
-                    <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center mr-3">
-                        <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16c-.77.833.192 2.5 1.732 2.5z"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-lg font-semibold text-gray-900">Form Already Exists</h3>
-                </div>
-                <p class="text-gray-600 mb-6">
-                    A completed form already exists for this <span id="form-exists-type">entry</span>. 
-                    Submitting a new form will overwrite the existing one. Do you want to continue?
-                </p>
-                <div class="flex space-x-3">
-                    <button onclick="closeFormExistsModal()" 
-                            class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium py-2 px-4 rounded-lg">
-                        Cancel
-                    </button>
-                    <button onclick="proceedWithNewForm()" 
-                            class="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg">
-                        Overwrite
-                    </button>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <!-- Footer -->
-    <footer class="mt-16 bg-white border-t border-gray-200">
-        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-            <div class="text-center text-gray-500 text-sm">
-                <p>&copy; 2025 DMGT. All rights reserved. | AI & Data Readiness Survey</p>
-            </div>
-        </div>
-    </footer>
-
+    </div>
+    
     <!-- JavaScript -->
     <script src="js/config.js"></script>
     <script src="js/api.js"></script>
