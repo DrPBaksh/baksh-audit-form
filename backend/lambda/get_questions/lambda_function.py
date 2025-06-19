@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import sys
+import urllib.parse
 
 # Add the shared layer to the path
 sys.path.append('/opt/python')
@@ -21,6 +22,88 @@ logger.setLevel(getattr(logging, log_level))
 SURVEY_BUCKET = os.environ.get('SURVEY_BUCKET')
 s3_utils = S3Utils(SURVEY_BUCKET)
 
+def extract_question_type_from_event(event):
+    """
+    Robust extraction of the 'type' query parameter from various event formats.
+    Handles API Gateway proxy integration, direct invocation, and testing scenarios.
+    """
+    question_type = None
+    
+    logger.info(f"Extracting question type from event: {json.dumps(event, default=str)}")
+    
+    # Method 1: API Gateway Proxy Integration - queryStringParameters
+    if 'queryStringParameters' in event:
+        query_params = event['queryStringParameters']
+        if query_params and isinstance(query_params, dict):
+            question_type = query_params.get('type')
+            logger.info(f"Found type in queryStringParameters: {question_type}")
+    
+    # Method 2: API Gateway Proxy Integration - multiValueQueryStringParameters  
+    if not question_type and 'multiValueQueryStringParameters' in event:
+        multi_params = event['multiValueQueryStringParameters']
+        if multi_params and isinstance(multi_params, dict) and 'type' in multi_params:
+            if isinstance(multi_params['type'], list) and multi_params['type']:
+                question_type = multi_params['type'][0]
+                logger.info(f"Found type in multiValueQueryStringParameters: {question_type}")
+    
+    # Method 3: Parse from raw query string if available
+    if not question_type and 'rawQueryString' in event:
+        raw_query = event['rawQueryString']
+        if raw_query:
+            try:
+                parsed_query = urllib.parse.parse_qs(raw_query)
+                if 'type' in parsed_query and parsed_query['type']:
+                    question_type = parsed_query['type'][0]
+                    logger.info(f"Found type in rawQueryString: {question_type}")
+            except Exception as e:
+                logger.warning(f"Failed to parse rawQueryString: {e}")
+    
+    # Method 4: Check in path parameters (alternative API design)
+    if not question_type and 'pathParameters' in event:
+        path_params = event['pathParameters']
+        if path_params and isinstance(path_params, dict):
+            question_type = path_params.get('type')
+            logger.info(f"Found type in pathParameters: {question_type}")
+    
+    # Method 5: Direct parameter in event (for testing/direct invocation)
+    if not question_type and 'type' in event:
+        question_type = event['type']
+        logger.info(f"Found type in direct event: {question_type}")
+    
+    # Method 6: Check in HTTP method context (if present)
+    if not question_type and 'requestContext' in event:
+        request_context = event['requestContext']
+        if isinstance(request_context, dict) and 'http' in request_context:
+            http_context = request_context['http']
+            if 'queryString' in http_context:
+                try:
+                    query_string = http_context['queryString']
+                    parsed_query = urllib.parse.parse_qs(query_string)
+                    if 'type' in parsed_query and parsed_query['type']:
+                        question_type = parsed_query['type'][0]
+                        logger.info(f"Found type in requestContext.http.queryString: {question_type}")
+                except Exception as e:
+                    logger.warning(f"Failed to parse query string from requestContext: {e}")
+    
+    # Method 7: Last resort - check event body for JSON with type parameter
+    if not question_type and 'body' in event:
+        try:
+            body = event['body']
+            if body:
+                if isinstance(body, str):
+                    body_data = json.loads(body)
+                else:
+                    body_data = body
+                
+                if isinstance(body_data, dict) and 'type' in body_data:
+                    question_type = body_data['type']
+                    logger.info(f"Found type in request body: {question_type}")
+        except Exception as e:
+            logger.debug(f"Failed to parse body for type parameter: {e}")
+    
+    logger.info(f"Final extracted question_type: {question_type}")
+    return question_type
+
 def lambda_handler(event, context):
     """
     Lambda handler to get survey questions
@@ -34,46 +117,33 @@ def lambda_handler(event, context):
     - 500: Internal error
     """
     try:
-        logger.info(f"Received event: {json.dumps(event, default=str)}")
+        logger.info(f"=== GET QUESTIONS REQUEST START ===")
+        logger.info(f"Received event keys: {list(event.keys())}")
+        logger.info(f"Event type: {type(event)}")
         
-        # Handle different event formats for proxy integration
-        query_params = {}
-        question_type = None
+        # Extract the question type using robust method
+        question_type = extract_question_type_from_event(event)
         
-        # Try multiple ways to extract query parameters
-        if 'queryStringParameters' in event and event['queryStringParameters']:
-            query_params = event['queryStringParameters']
-        elif 'multiValueQueryStringParameters' in event and event['multiValueQueryStringParameters']:
-            # Handle multi-value query parameters
-            multi_params = event['multiValueQueryStringParameters']
-            if 'type' in multi_params and multi_params['type']:
-                question_type = multi_params['type'][0]  # Take first value
-        elif 'type' in event:
-            # Direct parameter (for testing)
-            question_type = event['type']
-        
-        # Extract type from query parameters
-        if not question_type and query_params:
-            question_type = query_params.get('type')
-        
-        # Log what we extracted
-        logger.info(f"Extracted query_params: {query_params}")
-        logger.info(f"Extracted question_type: {question_type}")
-        
+        # Validate the question type
         if not question_type:
-            logger.error("Missing 'type' query parameter")
-            return lambda_response(400, {
+            error_details = {
                 'error': 'Missing required parameter: type',
-                'message': 'Please specify type=company or type=employee',
+                'message': 'Please specify type=company or type=employee in query parameters',
                 'received_event_keys': list(event.keys()),
-                'query_params': query_params
-            })
+                'event_sample': {k: str(v)[:200] + ('...' if len(str(v)) > 200 else '') 
+                               for k, v in event.items() if k in ['queryStringParameters', 'pathParameters', 'rawQueryString']},
+                'help': 'Use: GET /questions?type=company or GET /questions?type=employee'
+            }
+            logger.error(f"Missing 'type' query parameter. Debug info: {json.dumps(error_details, indent=2)}")
+            return lambda_response(400, error_details)
         
+        # Validate the question type value
         if question_type not in ['company', 'employee']:
             logger.error(f"Invalid question type: {question_type}")
             return lambda_response(400, {
                 'error': 'Invalid type parameter',
-                'message': 'Type must be either company or employee'
+                'message': 'Type must be either "company" or "employee"',
+                'received_type': question_type
             })
         
         # Determine CSV file path
@@ -108,37 +178,60 @@ def lambda_handler(event, context):
             
             processed_questions.append(processed_question)
         
-        logger.info(f"Successfully retrieved {len(processed_questions)} questions")
+        logger.info(f"Successfully retrieved {len(processed_questions)} questions for {question_type}")
         
-        return lambda_response(200, {
+        # Return successful response
+        response_data = {
             'type': question_type,
             'questions': processed_questions,
-            'total_questions': len(processed_questions)
-        })
+            'total_questions': len(processed_questions),
+            'timestamp': context.aws_request_id if context else None
+        }
+        
+        return lambda_response(200, response_data)
         
     except FileNotFoundError as e:
         logger.error(f"Questions file not found: {str(e)}")
-        return lambda_response(400, {
+        return lambda_response(404, {
             'error': 'Questions file not found',
-            'message': f'No questions available for type: {question_type if question_type else "unknown"}'
+            'message': f'No questions available for type: {question_type if "question_type" in locals() else "unknown"}',
+            'csv_key': csv_key if 'csv_key' in locals() else 'unknown'
         })
     
     except Exception as e:
         logger.error(f"Unexpected error: {str(e)}", exc_info=True)
         return lambda_response(500, {
             'error': 'Internal server error',
-            'message': 'Failed to retrieve questions'
+            'message': 'Failed to retrieve questions',
+            'request_id': context.aws_request_id if context else None
         })
 
 
 # For local testing
 if __name__ == "__main__":
-    # Test event for company response
-    test_event = {
-        'queryStringParameters': {
+    # Test events for different scenarios
+    test_events = [
+        # API Gateway Proxy Integration format
+        {
+            'httpMethod': 'GET',
+            'queryStringParameters': {'type': 'company'},
+            'pathParameters': None,
+            'requestContext': {'requestId': 'test-123'}
+        },
+        # Alternative format with multiValueQueryStringParameters
+        {
+            'httpMethod': 'GET',
+            'queryStringParameters': {'type': 'employee'},
+            'multiValueQueryStringParameters': {'type': ['employee']},
+            'pathParameters': None
+        },
+        # Direct invocation format
+        {
             'type': 'company'
-        }
-    }
+        },
+        # Empty event (should fail gracefully)
+        {}
+    ]
     
     # Mock context
     class MockContext:
@@ -147,11 +240,16 @@ if __name__ == "__main__":
             self.function_version = '$LATEST'
             self.memory_limit_in_mb = 256
             self.remaining_time_in_millis = 30000
+            self.aws_request_id = 'test-request-id'
     
     # Set environment variables for testing
     os.environ['SURVEY_BUCKET'] = 'test-bucket'
     os.environ['LOG_LEVEL'] = 'DEBUG'
     
-    # Run test
-    result = lambda_handler(test_event, MockContext())
-    print(json.dumps(result, indent=2))
+    # Run tests
+    for i, test_event in enumerate(test_events):
+        print(f"\n{'='*50}")
+        print(f"TEST {i+1}: {test_event}")
+        print('='*50)
+        result = lambda_handler(test_event, MockContext())
+        print(json.dumps(result, indent=2))
