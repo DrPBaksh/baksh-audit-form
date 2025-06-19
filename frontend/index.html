@@ -349,20 +349,356 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- Additional Information -->
+                <div class="mt-16 max-w-4xl mx-auto">
+                    <div class="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 md:p-12 text-white text-center shadow-2xl">
+                        <h3 class="text-2xl md:text-3xl font-bold mb-4">Why Take This Assessment?</h3>
+                        <p class="text-lg md:text-xl mb-8 opacity-90 leading-relaxed">
+                            Get actionable insights into your AI readiness, identify improvement opportunities, 
+                            and receive personalized recommendations for your digital transformation journey
+                        </p>
+                        
+                        <div class="grid md:grid-cols-3 gap-6 mt-8">
+                            <div class="flex flex-col items-center space-y-3">
+                                <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                                    <i class="fas fa-chart-line text-white text-xl"></i>
+                                </div>
+                                <h4 class="font-semibold">Benchmark Performance</h4>
+                                <p class="text-sm opacity-80">Compare against industry standards</p>
+                            </div>
+                            <div class="flex flex-col items-center space-y-3">
+                                <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                                    <i class="fas fa-lightbulb text-white text-xl"></i>
+                                </div>
+                                <h4 class="font-semibold">Actionable Insights</h4>
+                                <p class="text-sm opacity-80">Receive tailored recommendations</p>
+                            </div>
+                            <div class="flex flex-col items-center space-y-3">
+                                <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                                    <i class="fas fa-road text-white text-xl"></i>
+                                </div>
+                                <h4 class="font-semibold">Strategic Roadmap</h4>
+                                <p class="text-sm opacity-80">Build your transformation plan</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            
-            <!-- Placeholder sections for other screens -->
-            <div id="company-id-screen" class="hidden">Company ID Screen</div>
-            <div id="employee-id-screen" class="hidden">Employee ID Screen</div>
-            <div id="survey-screen" class="hidden">Survey Screen</div>
-            <div id="success-screen" class="hidden">Success Screen</div>
-        </div>
-    </main>
-    
-    <!-- JavaScript -->
-    <script src="js/config.js"></script>
-    <script src="js/api.js"></script>
-    <script src="js/survey.js"></script>
-    <script src="js/app.js"></script>
+
+            <!-- Company ID Input Screen -->
+            <div id="company-id-screen" class="hidden animate-slide-up">
+                <div class="max-w-xl mx-auto">
+                    <div class="card">
+                        <div class="p-8 md:p-10">
+                            <div class="text-center mb-8">
+                                <div class="w-16 h-16 bg-gradient-to-br from-primary-500 to-primary-700 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                                    <i class="fas fa-building text-white text-2xl"></i>
+                                </div>
+                                <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-3">Company Information</h2>
+                                <p class="text-gray-600 dark:text-gray-300 responsive-text">
+                                    Please enter your company identifier to begin the organizational assessment
+                                </p>
+                            </div>
+                            
+                            <div class="space-y-6">
+                                <div>
+                                    <label for="company-id-input" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                                        <i class="fas fa-id-card mr-2 text-primary-500"></i>
+                                        Company ID
+                                    </label>
+                                    <input type="text" 
+                                           id="company-id-input" 
+                                           class="form-input"
+                                           placeholder="Enter company ID (e.g., dmgt-london, dmgt-manchester)"
+                                           required>
+                                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                                        Use your organization's unique identifier
+                                    </p>
+                                </div>
+                                
+                                <div class="flex flex-col sm:flex-row gap-4">
+                                    <button onclick="goBack()" 
+                                            class="flex-1 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 font-semibold py-3 px-6 rounded-xl transition-all duration-200">
+                                        <i class="fas fa-arrow-left mr-2"></i>
+                                        Back
+                                    </button>
+                                    <button onclick="proceedWithCompanyId()" 
+                                            class="flex-1 btn-primary">
+                                        <i class="fas fa-arrow-right mr-2"></i>
+                                        Continue
+                                    </button>
+                                </div>
+                                
+                                <!-- Load Existing Section -->
+                                <div class="pt-6 border-t border-gray-200 dark:border-gray-700">
+                                    <div class="text-center space-y-4">
+                                        <div class="flex items-center justify-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+                                            <i class="fas fa-info-circle"></i>
+                                            <span>Have a partially completed assessment?</span>
+                                        </div>
+                                        <button onclick="loadExistingCompanyForm()" 
+                                                class="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl">
+                                            <i class="fas fa-folder-open mr-2"></i>
+                                            Load Existing Assessment
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Employee Information Input Screen -->
+            <div id="employee-id-screen" class="hidden animate-slide-up">
+                <div class="max-w-xl mx-auto">
+                    <div class="card">
+                        <div class="p-8 md:p-10">
+                            <div class="text-center mb-8">
+                                <div class="w-16 h-16 bg-gradient-to-br from-accent-500 to-accent-700 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                                    <i class="fas fa-users text-white text-2xl"></i>
+                                </div>
+                                <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-3">Employee Information</h2>
+                                <p class="text-gray-600 dark:text-gray-300 responsive-text">
+                                    Please enter your details to begin the individual assessment
+                                </p>
+                            </div>
+                            
+                            <div class="space-y-6">
+                                <div>
+                                    <label for="emp-company-id-input" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                                        <i class="fas fa-building mr-2 text-accent-500"></i>
+                                        Company ID
+                                    </label>
+                                    <input type="text" 
+                                           id="emp-company-id-input" 
+                                           class="form-input"
+                                           placeholder="Enter company ID (e.g., dmgt-london, dmgt-manchester)"
+                                           required>
+                                </div>
+                                
+                                <div>
+                                    <label for="employee-name-input" class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                                        <i class="fas fa-user mr-2 text-accent-500"></i>
+                                        Employee Name
+                                    </label>
+                                    <input type="text" 
+                                           id="employee-name-input" 
+                                           class="form-input"
+                                           placeholder="Enter your full name (e.g., john.smith, jane.doe)"
+                                           required>
+                                    <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                                        Use your preferred identifier (name, employee ID, etc.)
+                                    </p>
+                                </div>
+                                
+                                <div class="flex flex-col sm:flex-row gap-4">
+                                    <button onclick="goBack()" 
+                                            class="flex-1 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 font-semibold py-3 px-6 rounded-xl transition-all duration-200">
+                                        <i class="fas fa-arrow-left mr-2"></i>
+                                        Back
+                                    </button>
+                                    <button onclick="proceedWithEmployeeInfo()" 
+                                            class="flex-1 btn-secondary">
+                                        <i class="fas fa-arrow-right mr-2"></i>
+                                        Continue
+                                    </button>
+                                </div>
+                                
+                                <!-- Load Existing Section -->
+                                <div class="pt-6 border-t border-gray-200 dark:border-gray-700">
+                                    <div class="text-center space-y-4">
+                                        <div class="flex items-center justify-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
+                                            <i class="fas fa-info-circle"></i>
+                                            <span>Have a partially completed assessment?</span>
+                                        </div>
+                                        <button onclick="loadExistingEmployeeForm()" 
+                                                class="w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl">
+                                            <i class="fas fa-folder-open mr-2"></i>
+                                            Load Existing Assessment
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Survey Form Screen -->
+            <div id="survey-screen" class="hidden">
+                <!-- Loading State -->
+                <div id="loading-indicator" class="text-center py-12">
+                    <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+                    <p class="mt-4 text-gray-600 dark:text-gray-300">Loading survey questions...</p>
+                </div>
+                
+                <!-- Survey Form -->
+                <div id="survey-form" class="hidden">
+                    <div class="card">
+                        <!-- Survey Header -->
+                         <div class="border-b border-gray-200 dark:border-gray-700 p-6">
+                           <div class="flex justify-between items-center">
+                               <div>
+                                   <h2 id="survey-title" class="text-2xl font-bold text-gray-900 dark:text-white"></h2>
+                                   <p id="survey-subtitle" class="text-gray-600 dark:text-gray-300 mt-1"></p>
+                               </div>
+                               <div class="text-right">
+                                   <div class="text-sm text-gray-500 dark:text-gray-400">Progress</div>
+                                   <div class="text-lg font-semibold text-primary-600 dark:text-primary-400">
+                                       <span id="progress-current">0</span>/<span id="progress-total">0</span>
+                                   </div>
+                               </div>
+                           </div>
+                           
+                           <!-- Progress Bar -->
+                           <div class="mt-4">
+                               <div class="bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                   <div id="progress-bar" class="bg-primary-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                               </div>
+                           </div>
+                       </div>
+                       
+                       <!-- Survey Questions -->
+                       <div class="p-6">
+                           <form id="survey-questions-form" class="space-y-8">
+                               <!-- Questions will be dynamically inserted here -->
+                           </form>
+                           
+                           <!-- File Upload for Employee Surveys -->
+                           <div id="file-upload-section" class="hidden mt-8 p-6 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+                               <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                                   <i class="fas fa-cloud-upload-alt mr-2 text-accent-600 dark:text-accent-400"></i>
+                                   Document Upload (Optional)
+                               </h3>
+                               <p class="text-gray-600 dark:text-gray-300 mb-4">You can upload relevant documents to support your responses.</p>
+                               
+                               <div class="space-y-4">
+                                   <div>
+                                       <input type="file" 
+                                              id="file-input" 
+                                              multiple 
+                                              accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
+                                              class="block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 dark:file:bg-primary-900/30 file:text-primary-700 dark:file:text-primary-300 hover:file:bg-primary-100 dark:hover:file:bg-primary-900/50">
+                                   </div>
+                                   
+                                   <div id="file-list" class="space-y-2">
+                                       <!-- Uploaded files will appear here -->
+                                   </div>
+                                   
+                                   <!-- Visual indicator to scroll down -->
+                                   <div class="mt-4 p-3 bg-primary-50 dark:bg-primary-900/30 border border-primary-200 dark:border-primary-700 rounded-lg">
+                                       <div class="flex items-center text-primary-800 dark:text-primary-200 text-sm">
+                                           <i class="fas fa-arrow-down mr-2"></i>
+                                           <span class="font-medium">Scroll down to find the Submit buttons after uploading your files</span>
+                                       </div>
+                                   </div>
+                               </div>
+                           </div>
+                           
+                           <!-- Submit Section -->
+                           <div class="mt-8 flex flex-col sm:flex-row justify-between gap-4 border-t border-gray-200 dark:border-gray-700 pt-6">
+                               <button type="button" 
+                                       onclick="goBack()" 
+                                       class="bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 font-semibold py-3 px-6 rounded-xl transition-all duration-200">
+                                   <i class="fas fa-arrow-left mr-2"></i>
+                                   Back
+                               </button>
+                               
+                               <div class="flex flex-col sm:flex-row gap-3">
+                                   <button type="button" 
+                                           onclick="saveDraft()" 
+                                           id="save-draft-button"
+                                           class="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl">
+                                       <i class="fas fa-save mr-2"></i>
+                                       Save Progress
+                                   </button>
+                                   <button type="submit" 
+                                           id="submit-button"
+                                           class="btn-secondary">
+                                       <i class="fas fa-paper-plane mr-2"></i>
+                                       Submit Survey
+                                   </button>
+                               </div>
+                           </div>
+                       </div>
+                   </div>
+               </div>
+           </div>
+
+           <!-- Success Screen -->
+           <div id="success-screen" class="hidden text-center">
+               <div class="card">
+                   <div class="p-8 md:p-12">
+                       <div class="space-y-6">
+                           <div class="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto">
+                               <i class="fas fa-check text-green-600 dark:text-green-400 text-3xl"></i>
+                           </div>
+                           
+                           <div>
+                               <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-4">Survey Submitted Successfully!</h2>
+                               <p class="text-xl text-gray-600 dark:text-gray-300">Thank you for completing the AI & Data Readiness Assessment.</p>
+                           </div>
+                           
+                           <div class="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-xl p-6 border border-blue-200 dark:border-blue-700">
+                               <p class="text-blue-800 dark:text-blue-200 font-medium">
+                                   <i class="fas fa-info-circle mr-2"></i>
+                                   Your responses have been saved and will be reviewed by the appropriate team members.
+                               </p>
+                           </div>
+                           
+                           <button onclick="startOver()" 
+                                   class="btn-primary">
+                               <i class="fas fa-plus mr-2"></i>
+                               Start New Assessment
+                           </button>
+                       </div>
+                   </div>
+               </div>
+           </div>
+
+           <!-- Form Already Exists Warning Modal -->
+           <div id="form-exists-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+               <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md mx-4 shadow-2xl border border-gray-200 dark:border-gray-700">
+                   <div class="flex items-center mb-4">
+                       <div class="w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center mr-3">
+                           <i class="fas fa-exclamation-triangle text-yellow-600 dark:text-yellow-400"></i>
+                       </div>
+                       <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Form Already Exists</h3>
+                   </div>
+                   <p class="text-gray-600 dark:text-gray-300 mb-6">
+                       A completed form already exists for this <span id="form-exists-type">entry</span>. 
+                       Submitting a new form will overwrite the existing one. Do you want to continue?
+                   </p>
+                   <div class="flex space-x-3">
+                       <button onclick="closeFormExistsModal()" 
+                               class="flex-1 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 font-semibold py-2 px-4 rounded-lg transition-all duration-200">
+                           Cancel
+                       </button>
+                       <button onclick="proceedWithNewForm()" 
+                               class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200">
+                           Overwrite
+                       </button>
+                   </div>
+               </div>
+           </div>
+       </div>
+   </main>
+
+   <!-- Footer -->
+   <footer class="mt-16 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+       <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+           <div class="text-center text-gray-500 dark:text-gray-400 text-sm">
+               <p>&copy; 2025 DMGT. All rights reserved. | AI & Data Readiness Survey</p>
+           </div>
+       </div>
+   </footer>
+
+   <!-- JavaScript -->
+   <script src="js/config.js"></script>
+   <script src="js/api.js"></script>
+   <script src="js/survey.js"></script>
+   <script src="js/app.js"></script>
 </body>
 </html>

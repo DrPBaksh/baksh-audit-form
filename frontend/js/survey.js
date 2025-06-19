@@ -1,5 +1,6 @@
 /**
  * Survey form handling functions for Baksh Audit Form
+ * Enhanced with modern UI components and better space utilization
  */
 
 class SurveyManager {
@@ -13,35 +14,19 @@ class SurveyManager {
 
     /**
      * Load and display survey questions
-     * @param {string} type - 'company' or 'employee'
-     * @param {string} companyId - Company identifier
-     * @param {string} employeeId - Employee identifier (for employee surveys)
-     * @param {string} employeeName - Employee display name (for employee surveys)
      */
     async loadSurvey(type, companyId, employeeId = null, employeeName = null) {
         try {
-            // Show loading indicator
             this.showLoading(true);
-            
-            // Load questions from API
             this.surveyData = await window.bakshAPI.getQuestions(type);
             
-            // Store survey metadata
             this.currentSurvey = {
-                type,
-                companyId,
-                employeeId,
-                employeeName,
+                type, companyId, employeeId, employeeName,
                 questions: this.surveyData.questions
             };
             
-            // Try to load existing responses from S3
             await this.loadExistingResponses();
-            
-            // Render the survey
             this.renderSurvey();
-            
-            // Hide loading indicator
             this.showLoading(false);
             
         } catch (error) {
@@ -51,7 +36,7 @@ class SurveyManager {
     }
 
     /**
-     * Render survey questions in the form
+     * Render survey with modern styling
      */
     renderSurvey() {
         const surveyForm = document.getElementById('survey-questions-form');
@@ -60,310 +45,366 @@ class SurveyManager {
         const progressTotal = document.getElementById('progress-total');
         const fileUploadSection = document.getElementById('file-upload-section');
         
-        // Set survey title and subtitle
+        // Set enhanced titles
         if (this.currentSurvey.type === 'company') {
-            surveyTitle.textContent = 'Company AI & Data Readiness Assessment';
-            surveySubtitle.textContent = `Company ID: ${this.currentSurvey.companyId}`;
+            surveyTitle.innerHTML = `<i class="fas fa-building text-primary-600 dark:text-primary-400 mr-3"></i>Company AI & Data Readiness Assessment`;
+            surveySubtitle.innerHTML = `<div class="flex items-center space-x-2"><i class="fas fa-id-card text-gray-500 dark:text-gray-400"></i><span>Company ID: <strong>${this.currentSurvey.companyId}</strong></span></div>`;
             fileUploadSection.classList.add('hidden');
         } else {
-            surveyTitle.textContent = 'Employee AI & Data Readiness Assessment';
-            surveySubtitle.textContent = `Company: ${this.currentSurvey.companyId} | Employee: ${this.currentSurvey.employeeName || this.currentSurvey.employeeId}`;
+            surveyTitle.innerHTML = `<i class="fas fa-users text-accent-600 dark:text-accent-400 mr-3"></i>Individual AI & Data Readiness Assessment`;
+            surveySubtitle.innerHTML = `<div class="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-1 sm:space-y-0"><div class="flex items-center space-x-2"><i class="fas fa-building text-gray-500 dark:text-gray-400"></i><span>Company: <strong>${this.currentSurvey.companyId}</strong></span></div><div class="flex items-center space-x-2"><i class="fas fa-user text-gray-500 dark:text-gray-400"></i><span>Employee: <strong>${this.currentSurvey.employeeName || this.currentSurvey.employeeId}</strong></span></div></div>`;
             fileUploadSection.classList.remove('hidden');
         }
         
-        // Set progress total
         progressTotal.textContent = this.currentSurvey.questions.length;
-        
-        // Clear existing form content
         surveyForm.innerHTML = '';
         
-        // Group questions by section
         const questionsBySection = this.groupQuestionsBySection(this.currentSurvey.questions);
         
-        // Render each section
         Object.keys(questionsBySection).forEach((sectionName, index) => {
             const questions = questionsBySection[sectionName];
-            
-            // Add section divider (except for first section)
-            if (index > 0) {
-                const divider = document.createElement('div');
-                divider.className = 'section-divider';
-                surveyForm.appendChild(divider);
-            }
-            
-            // Add section title
-            if (sectionName && sectionName !== 'undefined') {
-                const sectionTitle = document.createElement('h3');
-                sectionTitle.className = 'section-title';
-                sectionTitle.textContent = sectionName;
-                surveyForm.appendChild(sectionTitle);
-            }
-            
-            // Render questions in this section
-            questions.forEach(question => {
-                const questionElement = this.renderQuestion(question);
-                surveyForm.appendChild(questionElement);
-            });
+            const sectionElement = this.createSection(sectionName, questions, index);
+            surveyForm.appendChild(sectionElement);
         });
         
-        // Setup form submission
         surveyForm.addEventListener('submit', (e) => {
             e.preventDefault();
             this.submitSurvey();
         });
         
-        // Setup file upload
         this.setupFileUpload();
-        
-        // Update progress
         this.updateProgress();
-        
-        // Show the form
         document.getElementById('survey-form').classList.remove('hidden');
         
-        // Show loaded message if we loaded existing responses
         if (Object.keys(this.currentResponses).length > 0) {
             this.showMessage('Loaded existing form responses!', 'success');
         }
     }
 
-    /**
-     * Group questions by section
-     * @param {Array} questions - Array of question objects
-     * @returns {Object} Questions grouped by section
-     */
+    createSection(sectionName, questions, index) {
+        const sectionElement = document.createElement('div');
+        sectionElement.className = 'survey-section mb-8 sm:mb-12';
+        
+        if (sectionName && sectionName !== 'undefined') {
+            const sectionHeader = document.createElement('div');
+            sectionHeader.className = 'section-header mb-6 sm:mb-8';
+            
+            const sectionIcon = this.getSectionIcon(sectionName);
+            
+            sectionHeader.innerHTML = `
+                <div class="flex items-center space-x-3 mb-3">
+                    <div class="w-8 h-8 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-lg flex items-center justify-center">
+                        <i class="${sectionIcon} text-white text-sm"></i>
+                    </div>
+                    <h3 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">${sectionName}</h3>
+                    <div class="flex-1 h-px bg-gradient-to-r from-gray-300 to-transparent dark:from-gray-600"></div>
+                </div>
+                <p class="text-sm text-gray-600 dark:text-gray-400 ml-11">${this.getSectionDescription(sectionName)}</p>
+            `;
+            
+            sectionElement.appendChild(sectionHeader);
+        }
+        
+        const questionsContainer = document.createElement('div');
+        questionsContainer.className = 'questions-container space-y-6 sm:space-y-8';
+        
+        questions.forEach((question, qIndex) => {
+            const questionElement = this.renderQuestion(question, qIndex);
+            questionsContainer.appendChild(questionElement);
+        });
+        
+        sectionElement.appendChild(questionsContainer);
+        return sectionElement;
+    }
+
+    getSectionIcon(sectionName) {
+        const iconMap = {
+            'Company Information': 'fas fa-building', 'Personal Information': 'fas fa-user',
+            'Digital Maturity': 'fas fa-chart-line', 'AI Strategy & Leadership': 'fas fa-chess-king',
+            'Technology Familiarity': 'fas fa-laptop', 'Current AI Usage': 'fas fa-robot',
+            'Data Governance & Quality': 'fas fa-database', 'Technology Infrastructure': 'fas fa-server',
+            'Workforce Readiness': 'fas fa-users', 'Risk Management': 'fas fa-shield-alt',
+            'Strategic Objectives': 'fas fa-target', 'Current Initiatives': 'fas fa-rocket',
+            'Future Planning': 'fas fa-road', 'Performance Metrics': 'fas fa-chart-bar',
+            'Data Culture': 'fas fa-brain', 'Security & Privacy': 'fas fa-lock',
+            'Implementation Timeline': 'fas fa-calendar', 'AI Attitudes': 'fas fa-heart',
+            'AI Confidence': 'fas fa-thumbs-up', 'Work Applications': 'fas fa-briefcase',
+            'Learning Preferences': 'fas fa-graduation-cap', 'AI Concerns': 'fas fa-exclamation-triangle',
+            'Management Support': 'fas fa-user-tie', 'Training Availability': 'fas fa-chalkboard-teacher',
+            'Learning Investment': 'fas fa-clock', 'Training Preferences': 'fas fa-book',
+            'Training Needs': 'fas fa-tools', 'Future Outlook': 'fas fa-crystal-ball',
+            'Adoption Factors': 'fas fa-puzzle-piece', 'Data Challenges': 'fas fa-exclamation-circle',
+            'Data-Driven Decisions': 'fas fa-chart-pie', 'Support Needs': 'fas fa-hands-helping',
+            'Communication Preferences': 'fas fa-comments', 'Job Impact': 'fas fa-smile',
+            'Advocacy': 'fas fa-megaphone', 'Feature Requests': 'fas fa-magic',
+            'Success Metrics': 'fas fa-medal', 'Automation Preference': 'fas fa-cogs',
+            'Additional Feedback': 'fas fa-comment-dots'
+        };
+        return iconMap[sectionName] || 'fas fa-question-circle';
+    }
+
+    getSectionDescription(sectionName) {
+        const descriptions = {
+            'Company Information': 'Basic information about your organization',
+            'Personal Information': 'Your role and background information',
+            'Digital Maturity': 'Current state of digital transformation',
+            'AI Strategy & Leadership': 'Strategic approach to AI adoption',
+            'Technology Familiarity': 'Your comfort level with technology',
+            'Current AI Usage': 'How you currently use AI tools',
+            'Data Governance & Quality': 'Data management and quality practices',
+            'Technology Infrastructure': 'Technical capabilities and platforms',
+            'Workforce Readiness': 'Employee skills and training',
+            'Risk Management': 'Risk assessment and mitigation strategies'
+        };
+        return descriptions[sectionName] || 'Please provide your responses for this section';
+    }
+
     groupQuestionsBySection(questions) {
         return questions.reduce((sections, question) => {
             const section = question.section || 'General';
-            if (!sections[section]) {
-                sections[section] = [];
-            }
+            if (!sections[section]) sections[section] = [];
             sections[section].push(question);
             return sections;
         }, {});
     }
 
-    /**
-     * Render a single question
-     * @param {Object} question - Question object
-     * @returns {HTMLElement} Question element
-     */
-    renderQuestion(question) {
+    renderQuestion(question, index = 0) {
         const questionDiv = document.createElement('div');
-        questionDiv.className = 'question-item space-y-3';
+        questionDiv.className = 'question-item bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-all duration-200 hover:shadow-md';
         questionDiv.dataset.questionId = question.id;
         
-        // Question label
+        const questionHeader = document.createElement('div');
+        questionHeader.className = 'question-header mb-4 flex items-start space-x-3';
+        
+        const questionNumber = document.createElement('div');
+        questionNumber.className = 'inline-flex items-center justify-center w-6 h-6 bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-full text-sm font-semibold flex-shrink-0 mt-1';
+        questionNumber.textContent = index + 1;
+        
+        const questionText = document.createElement('div');
+        questionText.className = 'flex-1';
+        
         const label = document.createElement('label');
-        label.className = 'block text-sm font-medium text-gray-700';
-        label.innerHTML = `
-            ${question.text}
-            ${question.required ? '<span class="text-red-500 ml-1">*</span>' : ''}
-        `;
-        questionDiv.appendChild(label);
+        label.className = 'block text-base sm:text-lg font-semibold text-gray-900 dark:text-white leading-relaxed';
+        label.innerHTML = `${question.text}${question.required ? '<span class="text-red-500 ml-1 text-lg">*</span>' : ''}`;
         
-        // Question input based on type
+        questionText.appendChild(label);
+        questionHeader.appendChild(questionNumber);
+        questionHeader.appendChild(questionText);
+        questionDiv.appendChild(questionHeader);
+        
+        const inputContainer = document.createElement('div');
+        inputContainer.className = 'question-input mt-4';
         const inputElement = this.createQuestionInput(question);
-        questionDiv.appendChild(inputElement);
+        inputContainer.appendChild(inputElement);
+        questionDiv.appendChild(inputContainer);
         
-        // Error message container
         const errorDiv = document.createElement('div');
-        errorDiv.className = 'error-message hidden';
+        errorDiv.className = 'error-message hidden mt-3 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg text-red-700 dark:text-red-300 text-sm flex items-center';
         errorDiv.id = `error-${question.id}`;
+        errorDiv.innerHTML = '<i class="fas fa-exclamation-circle mr-2"></i><span></span>';
         questionDiv.appendChild(errorDiv);
         
         return questionDiv;
     }
 
-    /**
-     * Create input element based on question type
-     * @param {Object} question - Question object
-     * @returns {HTMLElement} Input element
-     */
     createQuestionInput(question) {
-        const inputContainer = document.createElement('div');
-        
         switch (question.type.toLowerCase()) {
-            case 'text':
-                return this.createTextInput(question);
-            case 'textarea':
-                return this.createTextareaInput(question);
-            case 'radio':
-                return this.createRadioInput(question);
-            case 'checkbox':
-                return this.createCheckboxInput(question);
-            case 'select':
-                return this.createSelectInput(question);
-            default:
-                return this.createTextInput(question);
+            case 'text': return this.createTextInput(question);
+            case 'textarea': return this.createTextareaInput(question);
+            case 'radio': return this.createRadioInput(question);
+            case 'checkbox': return this.createCheckboxInput(question);
+            case 'select': return this.createSelectInput(question);
+            default: return this.createTextInput(question);
         }
     }
 
-    /**
-     * Create text input
-     */
     createTextInput(question) {
         const input = document.createElement('input');
         input.type = 'text';
         input.id = `question-${question.id}`;
         input.name = question.id;
-        input.className = 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent form-field';
+        input.className = 'form-input w-full';
         input.placeholder = 'Enter your response...';
         
-        if (question.required) {
-            input.required = true;
-        }
+        if (question.required) input.required = true;
+        if (this.currentResponses[question.id]) input.value = this.currentResponses[question.id];
         
-        // Set existing value
-        if (this.currentResponses[question.id]) {
-            input.value = this.currentResponses[question.id];
-        }
-        
-        // Add change listener
         input.addEventListener('change', () => this.updateProgress());
+        input.addEventListener('input', () => this.updateProgress());
         
         return input;
     }
 
-    /**
-     * Create textarea input
-     */
     createTextareaInput(question) {
         const textarea = document.createElement('textarea');
         textarea.id = `question-${question.id}`;
         textarea.name = question.id;
-        textarea.className = 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent form-field';
+        textarea.className = 'form-input w-full';
         textarea.placeholder = 'Enter your detailed response...';
         textarea.rows = 4;
         
-        if (question.required) {
-            textarea.required = true;
-        }
+        if (question.required) textarea.required = true;
+        if (this.currentResponses[question.id]) textarea.value = this.currentResponses[question.id];
         
-        // Set existing value
-        if (this.currentResponses[question.id]) {
-            textarea.value = this.currentResponses[question.id];
-        }
-        
-        // Add change listener
         textarea.addEventListener('change', () => this.updateProgress());
+        textarea.addEventListener('input', () => this.updateProgress());
         
         return textarea;
     }
 
-    /**
-     * Create radio input
-     */
     createRadioInput(question) {
         const container = document.createElement('div');
-        container.className = 'space-y-2';
+        container.className = 'space-y-3';
         
         question.options.forEach((option, index) => {
             const radioContainer = document.createElement('label');
-            radioContainer.className = 'custom-radio';
+            radioContainer.className = 'radio-option group flex items-start p-4 border border-gray-200 dark:border-gray-600 rounded-lg cursor-pointer transition-all duration-200 hover:border-primary-300 dark:hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20';
             
             const input = document.createElement('input');
             input.type = 'radio';
             input.id = `question-${question.id}-${index}`;
             input.name = question.id;
             input.value = option;
+            input.className = 'hidden';
             
-            if (question.required) {
-                input.required = true;
-            }
+            if (question.required) input.required = true;
             
-            // Set existing value
             if (this.currentResponses[question.id] === option) {
                 input.checked = true;
+                radioContainer.classList.add('border-primary-500', 'bg-primary-50', 'dark:bg-primary-900/20');
             }
             
-            // Add change listener
-            input.addEventListener('change', () => this.updateProgress());
+            input.addEventListener('change', () => {
+                container.querySelectorAll('.radio-option').forEach(opt => {
+                    opt.classList.remove('border-primary-500', 'bg-primary-50', 'dark:bg-primary-900/20');
+                });
+                if (input.checked) {
+                    radioContainer.classList.add('border-primary-500', 'bg-primary-50', 'dark:bg-primary-900/20');
+                }
+                this.updateProgress();
+            });
             
-            const radioMark = document.createElement('span');
-            radioMark.className = 'radio-mark';
+            const radioVisual = document.createElement('div');
+            radioVisual.className = 'flex-shrink-0 w-5 h-5 border-2 border-gray-300 dark:border-gray-600 rounded-full mr-3 flex items-center justify-center group-hover:border-primary-400 transition-colors';
+            
+            const radioInner = document.createElement('div');
+            radioInner.className = 'w-2.5 h-2.5 bg-primary-600 rounded-full hidden';
+            radioVisual.appendChild(radioInner);
+            
+            if (input.checked) {
+                radioInner.classList.remove('hidden');
+                radioVisual.classList.add('border-primary-600');
+            }
+            
+            input.addEventListener('change', () => {
+                container.querySelectorAll('.radio-option').forEach(opt => {
+                    const visual = opt.querySelector('div div');
+                    const border = opt.querySelector('div');
+                    visual.classList.add('hidden');
+                    border.classList.remove('border-primary-600');
+                });
+                if (input.checked) {
+                    radioInner.classList.remove('hidden');
+                    radioVisual.classList.add('border-primary-600');
+                }
+            });
             
             const text = document.createElement('span');
+            text.className = 'text-gray-700 dark:text-gray-300 leading-relaxed';
             text.textContent = option;
             
             radioContainer.appendChild(input);
-            radioContainer.appendChild(radioMark);
+            radioContainer.appendChild(radioVisual);
             radioContainer.appendChild(text);
-            
             container.appendChild(radioContainer);
         });
         
         return container;
     }
 
-    /**
-     * Create checkbox input
-     */
     createCheckboxInput(question) {
         const container = document.createElement('div');
-        container.className = 'space-y-2';
+        container.className = 'space-y-3';
         
         question.options.forEach((option, index) => {
             const checkboxContainer = document.createElement('label');
-            checkboxContainer.className = 'custom-checkbox flex items-center py-2 px-3 rounded border border-gray-200 hover:bg-gray-50';
+            checkboxContainer.className = 'checkbox-option group flex items-start p-4 border border-gray-200 dark:border-gray-600 rounded-lg cursor-pointer transition-all duration-200 hover:border-primary-300 dark:hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20';
             
             const input = document.createElement('input');
             input.type = 'checkbox';
             input.id = `question-${question.id}-${index}`;
             input.name = `${question.id}[]`;
             input.value = option;
+            input.className = 'hidden';
             
-            // Set existing values
             const existingValues = this.currentResponses[question.id];
             if (Array.isArray(existingValues) && existingValues.includes(option)) {
                 input.checked = true;
+                checkboxContainer.classList.add('border-primary-500', 'bg-primary-50', 'dark:bg-primary-900/20');
             }
             
-            // Add change listener
-            input.addEventListener('change', () => this.updateProgress());
+            input.addEventListener('change', () => {
+                if (input.checked) {
+                    checkboxContainer.classList.add('border-primary-500', 'bg-primary-50', 'dark:bg-primary-900/20');
+                } else {
+                    checkboxContainer.classList.remove('border-primary-500', 'bg-primary-50', 'dark:bg-primary-900/20');
+                }
+                this.updateProgress();
+            });
             
-            const checkmark = document.createElement('span');
-            checkmark.className = 'checkmark mr-3';
+            const checkboxVisual = document.createElement('div');
+            checkboxVisual.className = 'flex-shrink-0 w-5 h-5 border-2 border-gray-300 dark:border-gray-600 rounded mr-3 flex items-center justify-center group-hover:border-primary-400 transition-colors';
+            
+            const checkmark = document.createElement('i');
+            checkmark.className = 'fas fa-check text-white text-xs hidden';
+            checkboxVisual.appendChild(checkmark);
+            
+            if (input.checked) {
+                checkmark.classList.remove('hidden');
+                checkboxVisual.classList.add('bg-primary-600', 'border-primary-600');
+            }
+            
+            input.addEventListener('change', () => {
+                if (input.checked) {
+                    checkmark.classList.remove('hidden');
+                    checkboxVisual.classList.add('bg-primary-600', 'border-primary-600');
+                } else {
+                    checkmark.classList.add('hidden');
+                    checkboxVisual.classList.remove('bg-primary-600', 'border-primary-600');
+                }
+            });
             
             const text = document.createElement('span');
+            text.className = 'text-gray-700 dark:text-gray-300 leading-relaxed';
             text.textContent = option;
             
             checkboxContainer.appendChild(input);
-            checkboxContainer.appendChild(checkmark);
+            checkboxContainer.appendChild(checkboxVisual);
             checkboxContainer.appendChild(text);
-            
             container.appendChild(checkboxContainer);
         });
         
         return container;
     }
 
-    /**
-     * Create select input
-     */
     createSelectInput(question) {
         const select = document.createElement('select');
         select.id = `question-${question.id}`;
         select.name = question.id;
-        select.className = 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent form-field';
+        select.className = 'form-input w-full';
         
-        if (question.required) {
-            select.required = true;
-        }
+        if (question.required) select.required = true;
         
-        // Add default option
         const defaultOption = document.createElement('option');
         defaultOption.value = '';
         defaultOption.textContent = 'Select an option...';
         select.appendChild(defaultOption);
         
-        // Add options
         question.options.forEach(option => {
             const optionElement = document.createElement('option');
             optionElement.value = option;
             optionElement.textContent = option;
             
-            // Set existing value
             if (this.currentResponses[question.id] === option) {
                 optionElement.selected = true;
             }
@@ -371,477 +412,10 @@ class SurveyManager {
             select.appendChild(optionElement);
         });
         
-        // Add change listener
         select.addEventListener('change', () => this.updateProgress());
-        
         return select;
     }
 
-    /**
-     * Setup file upload functionality
-     */
+    // Continue with utility methods
     setupFileUpload() {
-        const fileInput = document.getElementById('file-input');
-        const fileList = document.getElementById('file-list');
-        
-        if (!fileInput) return;
-        
-        fileInput.addEventListener('change', (e) => {
-            this.handleFileSelection(e.target.files);
-        });
-        
-        // Setup drag and drop
-        const uploadSection = document.getElementById('file-upload-section');
-        if (uploadSection) {
-            uploadSection.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                uploadSection.classList.add('dragover');
-            });
-            
-            uploadSection.addEventListener('dragleave', (e) => {
-                e.preventDefault();
-                uploadSection.classList.remove('dragover');
-            });
-            
-            uploadSection.addEventListener('drop', (e) => {
-                e.preventDefault();
-                uploadSection.classList.remove('dragover');
-                this.handleFileSelection(e.dataTransfer.files);
-            });
-        }
-    }
-
-    /**
-     * Handle file selection
-     * @param {FileList} files - Selected files
-     */
-    handleFileSelection(files) {
-        const fileList = document.getElementById('file-list');
-        
-        Array.from(files).forEach(file => {
-            // Check if file already exists
-            if (this.uploadedFiles.some(f => f.name === file.name && f.size === file.size)) {
-                return;
-            }
-            
-            // Add to uploaded files list
-            this.uploadedFiles.push(file);
-            
-            // Create file item element
-            const fileItem = this.createFileItem(file);
-            fileList.appendChild(fileItem);
-        });
-        
-        // Clear the input
-        document.getElementById('file-input').value = '';
-    }
-
-    /**
-     * Create file item element
-     * @param {File} file - File object
-     * @returns {HTMLElement} File item element
-     */
-    createFileItem(file) {
-        const fileItem = document.createElement('div');
-        fileItem.className = 'file-item';
-        
-        const sizeText = this.formatFileSize(file.size);
-        
-        fileItem.innerHTML = `
-            <div class="file-info">
-                <div class="file-icon">📄</div>
-                <div class="file-details">
-                    <div class="file-name">${file.name}</div>
-                    <div class="file-size">${sizeText}</div>
-                </div>
-            </div>
-            <button type="button" class="remove-file" onclick="surveyManager.removeFile('${file.name}', ${file.size})">
-                ❌
-            </button>
-        `;
-        
-        return fileItem;
-    }
-
-    /**
-     * Remove uploaded file
-     * @param {string} fileName - File name
-     * @param {number} fileSize - File size
-     */
-    removeFile(fileName, fileSize) {
-        // Remove from uploaded files array
-        this.uploadedFiles = this.uploadedFiles.filter(f => 
-            !(f.name === fileName && f.size === fileSize)
-        );
-        
-        // Remove from DOM
-        const fileList = document.getElementById('file-list');
-        const fileItems = fileList.querySelectorAll('.file-item');
-        fileItems.forEach(item => {
-            const nameElement = item.querySelector('.file-name');
-            const sizeElement = item.querySelector('.file-size');
-            if (nameElement && nameElement.textContent === fileName &&
-                sizeElement && sizeElement.textContent === this.formatFileSize(fileSize)) {
-                item.remove();
-            }
-        });
-    }
-
-    /**
-     * Format file size for display
-     * @param {number} bytes - File size in bytes
-     * @returns {string} Formatted size
-     */
-    formatFileSize(bytes) {
-        if (bytes === 0) return '0 Bytes';
-        
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    }
-
-    /**
-     * Update progress indicator
-     */
-    updateProgress() {
-        const form = document.getElementById('survey-questions-form');
-        const progressCurrent = document.getElementById('progress-current');
-        const progressBar = document.getElementById('progress-bar');
-        
-        if (!form) return;
-        
-        // Count answered questions
-        let answeredCount = 0;
-        const totalQuestions = this.currentSurvey.questions.length;
-        
-        this.currentSurvey.questions.forEach(question => {
-            const value = this.getQuestionValue(question);
-            if (value !== null && value !== '' && value !== []) {
-                answeredCount++;
-            }
-        });
-        
-        // Update progress display
-        progressCurrent.textContent = answeredCount;
-        const percentage = (answeredCount / totalQuestions) * 100;
-        progressBar.style.width = `${percentage}%`;
-    }
-
-    /**
-     * Get value for a question
-     * @param {Object} question - Question object
-     * @returns {any} Question value
-     */
-    getQuestionValue(question) {
-        const form = document.getElementById('survey-questions-form');
-        
-        switch (question.type.toLowerCase()) {
-            case 'checkbox':
-                const checkboxes = form.querySelectorAll(`input[name="${question.id}[]"]:checked`);
-                return Array.from(checkboxes).map(cb => cb.value);
-            
-            case 'radio':
-                const radio = form.querySelector(`input[name="${question.id}"]:checked`);
-                return radio ? radio.value : null;
-            
-            default:
-                const input = form.querySelector(`[name="${question.id}"]`);
-                return input ? input.value.trim() : null;
-        }
-    }
-
-    /**
-     * Collect all form responses
-     * @returns {Object} Form responses
-     */
-    collectResponses() {
-        const responses = {};
-        
-        this.currentSurvey.questions.forEach(question => {
-            const value = this.getQuestionValue(question);
-            if (value !== null && value !== '') {
-                responses[question.id] = value;
-            }
-        });
-        
-        return responses;
-    }
-
-    /**
-     * Validate form responses
-     * @returns {boolean} True if valid
-     */
-    validateForm() {
-        this.validationErrors = [];
-        
-        // Clear previous error displays
-        document.querySelectorAll('.error-message').forEach(el => {
-            el.classList.add('hidden');
-            el.textContent = '';
-        });
-        document.querySelectorAll('.field-error').forEach(el => {
-            el.classList.remove('field-error');
-        });
-        
-        // Validate required fields
-        this.currentSurvey.questions.forEach(question => {
-            if (question.required) {
-                const value = this.getQuestionValue(question);
-                
-                if (value === null || value === '' || 
-                    (Array.isArray(value) && value.length === 0)) {
-                    
-                    this.validationErrors.push({
-                        questionId: question.id,
-                        message: 'This field is required'
-                    });
-                    
-                    // Show error in UI
-                    this.showFieldError(question.id, 'This field is required');
-                }
-            }
-        });
-        
-        return this.validationErrors.length === 0;
-    }
-
-    /**
-     * Show field error
-     * @param {string} questionId - Question ID
-     * @param {string} message - Error message
-     */
-    showFieldError(questionId, message) {
-        const errorElement = document.getElementById(`error-${questionId}`);
-        const questionElement = document.querySelector(`[data-question-id="${questionId}"]`);
-        const inputElement = questionElement?.querySelector('input, textarea, select');
-        
-        if (errorElement) {
-            errorElement.textContent = message;
-            errorElement.classList.remove('hidden');
-        }
-        
-        if (inputElement) {
-            inputElement.classList.add('field-error');
-        }
-    }
-
-    /**
-     * Submit survey
-     */
-    async submitSurvey() {
-        try {
-            // Validate form
-            if (!this.validateForm()) {
-                this.showError('Please correct the errors below before submitting.');
-                return;
-            }
-            
-            // Disable submit button
-            const submitButton = document.getElementById('submit-button');
-            const originalText = submitButton.textContent;
-            submitButton.disabled = true;
-            submitButton.textContent = 'Submitting...';
-            
-            // Collect responses
-            const responses = this.collectResponses();
-            
-            // Prepare submission data
-            const submissionData = {
-                type: this.currentSurvey.type,
-                company_id: this.currentSurvey.companyId,
-                responses: responses
-            };
-            
-            if (this.currentSurvey.employeeId) {
-                submissionData.employee_id = this.currentSurvey.employeeId;
-            }
-            
-            // Process file uploads for employee surveys
-            if (this.currentSurvey.type === 'employee' && this.uploadedFiles.length > 0) {
-                try {
-                    const files = await window.bakshAPI.convertFilesToBase64(this.uploadedFiles);
-                    submissionData.files = files;
-                } catch (error) {
-                    throw new Error(`File upload error: ${error.message}`);
-                }
-            }
-            
-            // Submit to API
-            const result = await window.bakshAPI.saveResponse(submissionData);
-            
-            // Show success
-            this.showSuccess();
-            
-        } catch (error) {
-            this.showError(`Submission failed: ${window.bakshAPI.getErrorMessage(error)}`);
-            
-            // Re-enable submit button
-            const submitButton = document.getElementById('submit-button');
-            if (submitButton) {
-                submitButton.disabled = false;
-                submitButton.textContent = originalText;
-            }
-        }
-    }
-
-    /**
-     * Save draft responses - Save to S3 via API
-     */
-    async saveDraft() {
-        try {
-            // Show saving indicator
-            const saveDraftButton = document.getElementById('save-draft-button');
-            if (saveDraftButton) {
-                const originalText = saveDraftButton.textContent;
-                saveDraftButton.disabled = true;
-                saveDraftButton.textContent = 'Saving...';
-                
-                // Re-enable after 3 seconds
-                setTimeout(() => {
-                    if (saveDraftButton) {
-                        saveDraftButton.disabled = false;
-                        saveDraftButton.textContent = originalText;
-                    }
-                }, 3000);
-            }
-            
-            const responses = this.collectResponses();
-            
-            // Only save if there are responses
-            if (Object.keys(responses).length === 0) {
-                this.showMessage('No responses to save yet!', 'info');
-                return;
-            }
-            
-            // Prepare draft data for API
-            const draftData = {
-                type: this.currentSurvey.type,
-                company_id: this.currentSurvey.companyId,
-                responses: responses
-            };
-            
-            if (this.currentSurvey.employeeId) {
-                draftData.employee_id = this.currentSurvey.employeeId;
-            }
-            
-            // Save to S3 via API
-            await window.bakshAPI.saveResponse(draftData);
-            
-            // Also save to localStorage as backup - FIXED: Use let instead of const
-            let draftKey = `baksh-survey-draft-${this.currentSurvey.type}-${this.currentSurvey.companyId}`;
-            if (this.currentSurvey.employeeId) {
-                draftKey += `-${this.currentSurvey.employeeId}`;
-            }
-            
-            localStorage.setItem(draftKey, JSON.stringify({
-                responses,
-                savedAt: new Date().toISOString()
-            }));
-            
-            // Show feedback
-            this.showMessage('Progress saved successfully!', 'success');
-            
-        } catch (error) {
-            console.error('Draft save error:', error);
-            this.showError(`Failed to save progress: ${window.bakshAPI.getErrorMessage(error)}`);
-        }
-    }
-
-    /**
-     * Load existing responses from S3 and localStorage
-     */
-    async loadExistingResponses() {
-        // Try to load from S3 first (server-saved responses)
-        try {
-            const existingResponse = await window.bakshAPI.getExistingResponse(
-                this.currentSurvey.type, 
-                this.currentSurvey.companyId, 
-                this.currentSurvey.employeeId
-            );
-            
-            if (existingResponse && existingResponse.data && existingResponse.data.responses) {
-                this.currentResponses = existingResponse.data.responses;
-                console.log('Loaded responses from S3:', this.currentResponses);
-                return;
-            }
-        } catch (error) {
-            console.log('No existing S3 response found:', error.message);
-        }
-        
-        // Fallback to localStorage (draft responses) - FIXED: Use let instead of const
-        let draftKey = `baksh-survey-draft-${this.currentSurvey.type}-${this.currentSurvey.companyId}`;
-        if (this.currentSurvey.employeeId) {
-            draftKey += `-${this.currentSurvey.employeeId}`;
-        }
-        
-        const draftData = localStorage.getItem(draftKey);
-        if (draftData) {
-            try {
-                const draft = JSON.parse(draftData);
-                this.currentResponses = draft.responses || {};
-                console.log('Loaded draft responses from localStorage:', this.currentResponses);
-            } catch (error) {
-                console.warn('Failed to parse draft data:', error);
-            }
-        }
-    }
-
-    /**
-     * Show loading indicator
-     * @param {boolean} show - Whether to show loading
-     */
-    showLoading(show) {
-        const loadingIndicator = document.getElementById('loading-indicator');
-        if (loadingIndicator) {
-            loadingIndicator.classList.toggle('hidden', !show);
-        }
-    }
-
-    /**
-     * Show error message
-     * @param {string} message - Error message
-     */
-    showError(message) {
-        this.showMessage(message, 'error');
-    }
-
-    /**
-     * Show success screen
-     */
-    showSuccess() {
-        // Hide survey screen
-        document.getElementById('survey-screen').classList.add('hidden');
-        
-        // Show success screen
-        document.getElementById('success-screen').classList.remove('hidden');
-        
-        // Clear draft data - FIXED: Use let instead of const
-        let draftKey = `baksh-survey-draft-${this.currentSurvey.type}-${this.currentSurvey.companyId}`;
-        if (this.currentSurvey.employeeId) {
-            draftKey += `-${this.currentSurvey.employeeId}`;
-        }
-        localStorage.removeItem(draftKey);
-    }
-
-    /**
-     * Show message to user
-     * @param {string} message - Message text
-     * @param {string} type - Message type ('error', 'success', 'info')
-     */
-    showMessage(message, type = 'info') {
-        // Use the global showMessage function if available
-        if (window.showMessage) {
-            window.showMessage(message, type);
-            return;
-        }
-        
-        // Fallback message display
-        console.log(`${type.toUpperCase()}: ${message}`);
-        alert(`${type.toUpperCase()}: ${message}`);
-    }
-}
-
-// Create global survey manager instance
-window.surveyManager = new SurveyManager();
+        const fileInput =
