@@ -148,13 +148,53 @@
 </head>
 
 <body class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-blue-900 dark:to-indigo-900 font-body antialiased">
-    <!-- Temporary placeholder - will complete in next commits -->
-    <div class="min-h-screen flex items-center justify-center">
-        <div class="text-center">
-            <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">DMGT AI Survey</h1>
-            <p class="text-xl text-gray-600 dark:text-gray-300">Modern UI Update in Progress...</p>
+    <!-- Navigation Header -->
+    <nav class="fixed w-full top-0 z-50 glass-effect shadow-lg border-b border-white/20 dark:border-gray-700/30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16 md:h-20">
+                <div class="flex items-center space-x-4">
+                    <div class="flex-shrink-0 flex items-center">
+                        <div class="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-xl flex items-center justify-center shadow-lg">
+                            <i class="fas fa-brain text-white text-lg md:text-xl"></i>
+                        </div>
+                        <div class="ml-3">
+                            <h1 class="text-xl md:text-2xl font-bold bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
+                                DMGT AI Survey
+                            </h1>
+                            <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 hidden sm:block">
+                                AI & Data Readiness Assessment
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <!-- Dark mode toggle -->
+                    <button id="theme-toggle" class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                        <i class="fas fa-moon dark:hidden text-gray-600"></i>
+                        <i class="fas fa-sun hidden dark:inline text-yellow-400"></i>
+                    </button>
+                    
+                    <!-- Status indicator -->
+                    <div class="hidden md:flex items-center space-x-2 px-3 py-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                        <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse-soft"></div>
+                        <span class="text-sm text-green-700 dark:text-green-300 font-medium">System Online</span>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="pt-20 md:pt-24 pb-16">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Temporary placeholder - continuing with content in next commits -->
+            <div class="text-center py-16">
+                <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-4">DMGT AI Survey</h1>
+                <p class="text-xl text-gray-600 dark:text-gray-300">Professional navigation added - building content...</p>
+            </div>
+        </div>
+    </main>
     
     <!-- JavaScript -->
     <script src="js/config.js"></script>
