@@ -1,5 +1,6 @@
 /**
  * Main application logic for Baksh Audit Form
+ * Enhanced with modern UI features and dark mode support
  */
 
 // Application state
@@ -23,7 +24,10 @@ const screens = {
  * Initialize the application
  */
 function initializeApp() {
-    console.log('🚀 Initializing Baksh Audit Form');
+    console.log('🚀 Initializing DMGT AI Survey Platform');
+    
+    // Initialize dark mode
+    initializeDarkMode();
     
     // Check API connectivity
     checkAPIConnection();
@@ -34,7 +38,81 @@ function initializeApp() {
     // Add keyboard event listeners
     document.addEventListener('keydown', handleKeyboardEvents);
     
-    console.log('✅ Application initialized');
+    // Initialize theme toggle
+    setupThemeToggle();
+    
+    console.log('✅ Application initialized with modern UI');
+}
+
+/**
+ * Initialize dark mode based on saved preference or system preference
+ */
+function initializeDarkMode() {
+    const savedTheme = localStorage.getItem('dmgt-survey-theme');
+    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    const shouldUseDark = savedTheme === 'dark' || (!savedTheme && systemPrefersDark);
+    
+    if (shouldUseDark) {
+        document.documentElement.classList.add('dark');
+    } else {
+        document.documentElement.classList.remove('dark');
+    }
+    
+    // Update toggle button state
+    updateThemeToggleButton(shouldUseDark);
+}
+
+/**
+ * Setup theme toggle functionality
+ */
+function setupThemeToggle() {
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+        themeToggle.addEventListener('click', toggleDarkMode);
+    }
+}
+
+/**
+ * Toggle dark mode
+ */
+function toggleDarkMode() {
+    const isDark = document.documentElement.classList.contains('dark');
+    
+    if (isDark) {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('dmgt-survey-theme', 'light');
+        updateThemeToggleButton(false);
+    } else {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('dmgt-survey-theme', 'dark');
+        updateThemeToggleButton(true);
+    }
+    
+    // Add smooth transition effect
+    document.documentElement.style.transition = 'background-color 0.3s ease, color 0.3s ease';
+    setTimeout(() => {
+        document.documentElement.style.transition = '';
+    }, 300);
+}
+
+/**
+ * Update theme toggle button appearance
+ */
+function updateThemeToggleButton(isDark) {
+    const themeToggle = document.getElementById('theme-toggle');
+    if (!themeToggle) return;
+    
+    const moonIcon = themeToggle.querySelector('.fa-moon');
+    const sunIcon = themeToggle.querySelector('.fa-sun');
+    
+    if (isDark) {
+        if (moonIcon) moonIcon.classList.add('hidden');
+        if (sunIcon) sunIcon.classList.remove('hidden');
+    } else {
+        if (moonIcon) moonIcon.classList.remove('hidden');
+        if (sunIcon) sunIcon.classList.add('hidden');
+    }
 }
 
 /**
@@ -52,26 +130,48 @@ async function checkAPIConnection() {
 }
 
 /**
- * Show a specific screen
+ * Show a specific screen with enhanced animations
  * @param {string} screenName - Name of the screen to show
  */
 function showScreen(screenName) {
-    // Hide all screens
+    // Hide all screens with fade out
     Object.values(screens).forEach(screen => {
-        if (screen) {
-            screen.classList.add('hidden');
+        if (screen && !screen.classList.contains('hidden')) {
+            screen.style.opacity = '0';
+            screen.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+                screen.classList.add('hidden');
+                screen.style.opacity = '';
+                screen.style.transform = '';
+            }, 200);
         }
     });
     
-    // Show target screen
-    if (screens[screenName]) {
-        screens[screenName].classList.remove('hidden');
-        screens[screenName].classList.add('fade-in');
-        currentScreen = screenName;
-        
-        // Focus management
-        focusFirstInput(screenName);
-    }
+    // Show target screen with fade in
+    setTimeout(() => {
+        if (screens[screenName]) {
+            screens[screenName].classList.remove('hidden');
+            screens[screenName].style.opacity = '0';
+            screens[screenName].style.transform = 'translateY(20px)';
+            
+            // Trigger reflow
+            screens[screenName].offsetHeight;
+            
+            // Animate in
+            screens[screenName].style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+            screens[screenName].style.opacity = '1';
+            screens[screenName].style.transform = 'translateY(0)';
+            
+            setTimeout(() => {
+                screens[screenName].style.transition = '';
+            }, 400);
+            
+            currentScreen = screenName;
+            
+            // Focus management
+            focusFirstInput(screenName);
+        }
+    }, 200);
     
     console.log(`📱 Showing screen: ${screenName}`);
 }
@@ -85,11 +185,19 @@ function focusFirstInput(screenName) {
         const screen = screens[screenName];
         if (screen) {
             const firstInput = screen.querySelector('input, button');
-            if (firstInput) {
+            if (firstInput && !isMobileDevice()) {
                 firstInput.focus();
             }
         }
-    }, 100);
+    }, 500);
+}
+
+/**
+ * Detect if device is mobile
+ */
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+           window.innerWidth <= 768;
 }
 
 /**
@@ -122,20 +230,40 @@ function handleKeyboardEvents(event) {
 }
 
 /**
- * Start company assessment
+ * Start company assessment with enhanced feedback
  */
 function startCompanyAssessment() {
     console.log('🏢 Starting company assessment');
     surveyType = 'company';
+    
+    // Add button feedback
+    const button = event.target;
+    if (button) {
+        button.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+            button.style.transform = '';
+        }, 150);
+    }
+    
     showScreen('companyId');
 }
 
 /**
- * Start employee assessment
+ * Start employee assessment with enhanced feedback
  */
 function startEmployeeAssessment() {
     console.log('👤 Starting employee assessment');
     surveyType = 'employee';
+    
+    // Add button feedback
+    const button = event.target;
+    if (button) {
+        button.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+            button.style.transform = '';
+        }, 150);
+    }
+    
     showScreen('employeeId');
 }
 
@@ -151,9 +279,14 @@ async function proceedWithCompanyId() {
         return;
     }
     
-    // Validate company ID format (alphanumeric, hyphens, underscores)
+    // Enhanced validation with better feedback
     if (!/^[a-zA-Z0-9_-]+$/.test(id)) {
         showFieldError(input, 'Company ID can only contain letters, numbers, hyphens, and underscores');
+        return;
+    }
+    
+    if (id.length < 3) {
+        showFieldError(input, 'Company ID must be at least 3 characters long');
         return;
     }
     
@@ -192,6 +325,9 @@ async function proceedWithEmployeeInfo() {
         hasError = true;
     } else if (!/^[a-zA-Z0-9_-]+$/.test(companyIdValue)) {
         showFieldError(companyInput, 'Company ID can only contain letters, numbers, hyphens, and underscores');
+        hasError = true;
+    } else if (companyIdValue.length < 3) {
+        showFieldError(companyInput, 'Company ID must be at least 3 characters long');
         hasError = true;
     } else {
         clearFieldError(companyInput);
@@ -445,7 +581,7 @@ function saveDraft() {
 }
 
 /**
- * Show field error
+ * Show field error with enhanced styling
  * @param {HTMLElement} input - Input element
  * @param {string} message - Error message
  */
@@ -453,40 +589,49 @@ function showFieldError(input, message) {
     // Clear previous error
     clearFieldError(input);
     
-    // Add error class
-    input.classList.add('field-error');
+    // Add error classes for modern styling
+    input.classList.add('border-red-500', 'ring-red-500', 'ring-2');
+    input.classList.remove('border-gray-300', 'dark:border-gray-600');
     
     // Create or update error message
     let errorElement = input.parentNode.querySelector('.error-message');
     if (!errorElement) {
         errorElement = document.createElement('div');
-        errorElement.className = 'error-message';
+        errorElement.className = 'error-message text-red-600 dark:text-red-400 text-sm mt-2 flex items-center';
         input.parentNode.appendChild(errorElement);
     }
     
-    errorElement.textContent = message;
+    errorElement.innerHTML = `
+        <i class="fas fa-exclamation-circle mr-2"></i>
+        <span>${message}</span>
+    `;
     errorElement.classList.remove('hidden');
     
-    // Focus the input
+    // Focus the input with animation
     input.focus();
+    input.style.animation = 'shake 0.5s ease-in-out';
+    setTimeout(() => {
+        input.style.animation = '';
+    }, 500);
 }
 
 /**
- * Clear field error
+ * Clear field error with enhanced styling
  * @param {HTMLElement} input - Input element
  */
 function clearFieldError(input) {
-    input.classList.remove('field-error');
+    input.classList.remove('border-red-500', 'ring-red-500', 'ring-2');
+    input.classList.add('border-gray-300', 'dark:border-gray-600');
     
     const errorElement = input.parentNode.querySelector('.error-message');
     if (errorElement) {
         errorElement.classList.add('hidden');
-        errorElement.textContent = '';
+        errorElement.innerHTML = '';
     }
 }
 
 /**
- * Show message to user
+ * Show message to user with enhanced modern styling
  * @param {string} message - Message text
  * @param {string} type - Message type ('error', 'success', 'info', 'warning')
  */
@@ -497,27 +642,25 @@ function showMessage(message, type = 'info') {
         existingMessage.remove();
     }
     
-    // Create message element
+    // Create message element with modern styling
     const messageEl = document.createElement('div');
     messageEl.id = 'global-message';
-    messageEl.className = `fixed top-4 right-4 max-w-md p-4 rounded-lg shadow-lg z-50 slide-in-left ${getMessageClasses(type)}`;
+    messageEl.className = `fixed top-4 right-4 max-w-md p-4 rounded-xl shadow-2xl z-50 ${getMessageClasses(type)} transition-all duration-300 transform translate-x-full`;
     
-    // Message content
+    // Enhanced message content
     messageEl.innerHTML = `
         <div class="flex items-start">
             <div class="flex-shrink-0">
                 ${getMessageIcon(type)}
             </div>
             <div class="ml-3 flex-1">
-                <p class="text-sm font-medium">${message}</p>
+                <p class="text-sm font-semibold">${message}</p>
             </div>
             <div class="ml-4 flex-shrink-0">
                 <button onclick="this.parentElement.parentElement.parentElement.remove()" 
-                        class="inline-flex text-gray-400 hover:text-gray-600 focus:outline-none">
+                        class="inline-flex text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none transition-colors">
                     <span class="sr-only">Close</span>
-                    <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                    </svg>
+                    <i class="fas fa-times w-4 h-4"></i>
                 </button>
             </div>
         </div>
@@ -526,61 +669,61 @@ function showMessage(message, type = 'info') {
     // Add to page
     document.body.appendChild(messageEl);
     
+    // Animate in
+    setTimeout(() => {
+        messageEl.classList.remove('translate-x-full');
+    }, 10);
+    
     // Auto-hide after 7 seconds (unless it's an error)
     if (type !== 'error') {
         setTimeout(() => {
             if (messageEl && messageEl.parentNode) {
-                messageEl.remove();
+                messageEl.classList.add('translate-x-full');
+                setTimeout(() => {
+                    messageEl.remove();
+                }, 300);
             }
         }, 7000);
     }
 }
 
 /**
- * Get message CSS classes based on type
+ * Get enhanced message CSS classes based on type
  * @param {string} type - Message type
  * @returns {string} CSS classes
  */
 function getMessageClasses(type) {
     switch (type) {
         case 'error':
-            return 'bg-red-50 border border-red-200 text-red-800';
+            return 'bg-red-50 dark:bg-red-900/90 border border-red-200 dark:border-red-700 text-red-800 dark:text-red-200';
         case 'success':
-            return 'bg-green-50 border border-green-200 text-green-800';
+            return 'bg-green-50 dark:bg-green-900/90 border border-green-200 dark:border-green-700 text-green-800 dark:text-green-200';
         case 'warning':
-            return 'bg-yellow-50 border border-yellow-200 text-yellow-800';
+            return 'bg-yellow-50 dark:bg-yellow-900/90 border border-yellow-200 dark:border-yellow-700 text-yellow-800 dark:text-yellow-200';
         case 'info':
         default:
-            return 'bg-blue-50 border border-blue-200 text-blue-800';
+            return 'bg-blue-50 dark:bg-blue-900/90 border border-blue-200 dark:border-blue-700 text-blue-800 dark:text-blue-200';
     }
 }
 
 /**
- * Get message icon based on type
+ * Get enhanced message icon based on type
  * @param {string} type - Message type
  * @returns {string} Icon HTML
  */
 function getMessageIcon(type) {
-    const iconClass = "h-5 w-5";
+    const iconClass = "w-5 h-5";
     
     switch (type) {
         case 'error':
-            return `<svg class="${iconClass} text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-            </svg>`;
+            return `<i class="fas fa-exclamation-circle ${iconClass} text-red-500"></i>`;
         case 'success':
-            return `<svg class="${iconClass} text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-            </svg>`;
+            return `<i class="fas fa-check-circle ${iconClass} text-green-500"></i>`;
         case 'warning':
-            return `<svg class="${iconClass} text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-            </svg>`;
+            return `<i class="fas fa-exclamation-triangle ${iconClass} text-yellow-500"></i>`;
         case 'info':
         default:
-            return `<svg class="${iconClass} text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
-            </svg>`;
+            return `<i class="fas fa-info-circle ${iconClass} text-blue-500"></i>`;
     }
 }
 
@@ -639,6 +782,39 @@ function setupEventListeners() {
             }
         }
     });
+    
+    // Listen for system theme changes
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        const savedTheme = localStorage.getItem('dmgt-survey-theme');
+        if (!savedTheme) {
+            // Only update if user hasn't set a preference
+            if (e.matches) {
+                document.documentElement.classList.add('dark');
+                updateThemeToggleButton(true);
+            } else {
+                document.documentElement.classList.remove('dark');
+                updateThemeToggleButton(false);
+            }
+        }
+    });
+}
+
+/**
+ * Add CSS for shake animation
+ */
+function addShakeAnimation() {
+    if (!document.getElementById('shake-styles')) {
+        const style = document.createElement('style');
+        style.id = 'shake-styles';
+        style.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                25% { transform: translateX(-5px); }
+                75% { transform: translateX(5px); }
+            }
+        `;
+        document.head.appendChild(style);
+    }
 }
 
 /**
@@ -653,6 +829,7 @@ function cleanup() {
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
+    addShakeAnimation();
     initializeApp();
     setupEventListeners();
 });
@@ -673,6 +850,7 @@ window.goBack = goBack;
 window.startOver = startOver;
 window.saveDraft = saveDraft;
 window.showMessage = showMessage;
+window.toggleDarkMode = toggleDarkMode;
 
 // Export for testing if needed
 if (typeof module !== 'undefined' && module.exports) {
@@ -685,6 +863,7 @@ if (typeof module !== 'undefined' && module.exports) {
         proceedWithEmployeeInfo,
         goBack,
         startOver,
-        saveDraft
+        saveDraft,
+        toggleDarkMode
     };
 }
