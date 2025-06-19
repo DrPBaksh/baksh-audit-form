@@ -3,6 +3,7 @@ from aws_cdk import (
     Stack,
     aws_lambda as _lambda,
     aws_apigateway as apigateway,
+    aws_iam as iam,
     aws_logs as logs,
     CfnOutput,
     Duration,
@@ -160,21 +161,21 @@ class ApiStack(Stack):
         
         # Permission for get_questions function
         get_questions_function.add_permission("ApiGatewayInvokeQuestions",
-            principal=cdk.aws_iam.ServicePrincipal("apigateway.amazonaws.com"),
+            principal=iam.ServicePrincipal("apigateway.amazonaws.com"),
             action="lambda:InvokeFunction",
             source_arn=f"arn:aws:execute-api:{self.region}:{self.account}:{api.rest_api_id}/{environment}/GET/questions"
         )
         
         # Permission for save_response function  
         save_response_function.add_permission("ApiGatewayInvokeResponsesPost",
-            principal=cdk.aws_iam.ServicePrincipal("apigateway.amazonaws.com"),
+            principal=iam.ServicePrincipal("apigateway.amazonaws.com"),
             action="lambda:InvokeFunction",
             source_arn=f"arn:aws:execute-api:{self.region}:{self.account}:{api.rest_api_id}/{environment}/POST/responses"
         )
         
         # Permission for get_response function - CRITICAL: This was missing!
         get_response_function.add_permission("ApiGatewayInvokeResponsesGet",
-            principal=cdk.aws_iam.ServicePrincipal("apigateway.amazonaws.com"),
+            principal=iam.ServicePrincipal("apigateway.amazonaws.com"),
             action="lambda:InvokeFunction",
             source_arn=f"arn:aws:execute-api:{self.region}:{self.account}:{api.rest_api_id}/{environment}/GET/responses"
         )
