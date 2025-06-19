@@ -155,7 +155,31 @@ class ApiStack(Stack):
             description=f"Baksh Audit Form Survey API - {environment} stage"
         )
 
-        # 8️⃣ Outputs
+        # 8️⃣ Explicit API Gateway permissions to prevent missing permission issues
+        # This ensures all Lambda functions have proper invoke permissions for the specified stage
+        
+        # Permission for get_questions function
+        get_questions_function.add_permission("ApiGatewayInvokeQuestions",
+            principal=cdk.aws_iam.ServicePrincipal("apigateway.amazonaws.com"),
+            action="lambda:InvokeFunction",
+            source_arn=f"arn:aws:execute-api:{self.region}:{self.account}:{api.rest_api_id}/{environment}/GET/questions"
+        )
+        
+        # Permission for save_response function  
+        save_response_function.add_permission("ApiGatewayInvokeResponsesPost",
+            principal=cdk.aws_iam.ServicePrincipal("apigateway.amazonaws.com"),
+            action="lambda:InvokeFunction",
+            source_arn=f"arn:aws:execute-api:{self.region}:{self.account}:{api.rest_api_id}/{environment}/POST/responses"
+        )
+        
+        # Permission for get_response function - CRITICAL: This was missing!
+        get_response_function.add_permission("ApiGatewayInvokeResponsesGet",
+            principal=cdk.aws_iam.ServicePrincipal("apigateway.amazonaws.com"),
+            action="lambda:InvokeFunction",
+            source_arn=f"arn:aws:execute-api:{self.region}:{self.account}:{api.rest_api_id}/{environment}/GET/responses"
+        )
+
+        # 9️⃣ Outputs
         CfnOutput(self, "ApiUrl",
             description="Survey API Gateway URL",
             value=f"https://{api.rest_api_id}.execute-api.{self.region}.amazonaws.com/{environment}"
