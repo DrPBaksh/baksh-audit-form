@@ -126,7 +126,18 @@ class InfraStack(Stack):
         self.survey_bucket.grant_write(self.save_response_role, "companies/*")
         self.survey_bucket.grant_read(self.save_response_role, "companies/*")
 
-        # 7️⃣ Outputs
+        # 7️⃣ IAM Role for Lambda functions to get existing responses (least privilege)
+        self.get_response_role = iam.Role(self, "GetResponseRole",
+            assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"),
+            managed_policies=[
+                iam.ManagedPolicy.from_aws_managed_policy_name("service-role/AWSLambdaBasicExecutionRole")
+            ]
+        )
+        
+        # Grant read-only access to companies/ prefix for retrieving existing responses
+        self.survey_bucket.grant_read(self.get_response_role, "companies/*")
+
+        # 8️⃣ Outputs
         CfnOutput(self, "SurveyBucketName",
             description="S3 bucket for survey questions and responses",
             value=self.survey_bucket.bucket_name
