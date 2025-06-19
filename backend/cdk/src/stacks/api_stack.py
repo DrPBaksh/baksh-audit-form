@@ -9,6 +9,7 @@ from aws_cdk import (
 )
 from constructs import Construct
 import os
+import hashlib
 
 class ApiStack(Stack):
     def __init__(self, scope: Construct, id: str, *,
@@ -81,79 +82,47 @@ class ApiStack(Stack):
             )
         )
 
-        # 5️⃣ API Resources and Methods with FIXED Proxy Integration
+        # 5️⃣ API Resources and Methods with PROPER Proxy Integration
         
         # /questions resource
         questions_resource = api.root.add_resource("questions")
         
-        # GET /questions (with query parameter ?type=company|employee)
-        # FIXED: Using LambdaIntegration with proper proxy configuration
+        # GET /questions - SIMPLIFIED proxy integration (no explicit responses)
+        # This ensures CDK doesn't interfere with the proxy behavior
         questions_integration = apigateway.LambdaIntegration(
             get_questions_function,
-            proxy=True,
-            integration_responses=[
-                apigateway.IntegrationResponse(
-                    status_code="200",
-                    response_parameters={
-                        "method.response.header.Access-Control-Allow-Origin": "'*'",
-                        "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
-                        "method.response.header.Access-Control-Allow-Methods": "'GET,POST,OPTIONS'"
-                    }
-                )
-            ]
+            proxy=True  # Pure proxy integration - let Lambda handle everything
         )
         
-        questions_resource.add_method("GET", questions_integration,
-            method_responses=[
-                apigateway.MethodResponse(
-                    status_code="200",
-                    response_parameters={
-                        "method.response.header.Access-Control-Allow-Origin": True,
-                        "method.response.header.Access-Control-Allow-Headers": True,
-                        "method.response.header.Access-Control-Allow-Methods": True
-                    }
-                )
-            ]
-        )
+        questions_resource.add_method("GET", questions_integration)
 
         # /responses resource
         responses_resource = api.root.add_resource("responses")
         
-        # POST /responses
-        # FIXED: Using LambdaIntegration with proper proxy configuration
+        # POST /responses - SIMPLIFIED proxy integration (no explicit responses)
         responses_integration = apigateway.LambdaIntegration(
             save_response_function,
-            proxy=True,
-            integration_responses=[
-                apigateway.IntegrationResponse(
-                    status_code="200",
-                    response_parameters={
-                        "method.response.header.Access-Control-Allow-Origin": "'*'",
-                        "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
-                        "method.response.header.Access-Control-Allow-Methods": "'GET,POST,OPTIONS'"
-                    }
-                )
-            ]
+            proxy=True  # Pure proxy integration - let Lambda handle everything
         )
         
-        responses_resource.add_method("POST", responses_integration,
-            method_responses=[
-                apigateway.MethodResponse(
-                    status_code="200",
-                    response_parameters={
-                        "method.response.header.Access-Control-Allow-Origin": True,
-                        "method.response.header.Access-Control-Allow-Headers": True,
-                        "method.response.header.Access-Control-Allow-Methods": True
-                    }
-                )
-            ]
-        )
+        responses_resource.add_method("POST", responses_integration)
 
-        # 6️⃣ API Gateway Deployment (manual configuration to avoid conflicts)
-        deployment = apigateway.Deployment(self, "SurveyApiDeployment",
+        # 6️⃣ FORCED API Gateway Deployment with unique identifier
+        # This ensures a new deployment is created every time CDK runs
+        
+        # Create a unique deployment identifier based on function code hashes
+        deployment_hash = hashlib.md5(
+            f"{get_questions_function.function_name}-{save_response_function.function_name}-{cdk.Aws.STACK_NAME}".encode()
+        ).hexdigest()[:8]
+        
+        deployment = apigateway.Deployment(self, f"SurveyApiDeployment{deployment_hash}",
             api=api,
-            description="Baksh Audit Form Survey API Deployment"
+            description=f"Baksh Audit Form API Deployment - {deployment_hash}"
         )
+        
+        # Ensure deployment depends on methods (forces redeployment when methods change)
+        deployment.node.add_dependency(questions_resource)
+        deployment.node.add_dependency(responses_resource)
         
         stage = apigateway.Stage(self, "SurveyApiStage",
             deployment=deployment,
@@ -175,4 +144,9 @@ class ApiStack(Stack):
         CfnOutput(self, "SaveResponseFunctionName",
             description="Save Response Lambda function name",
             value=save_response_function.function_name
+        )
+        
+        CfnOutput(self, "ApiDeploymentId",
+            description="API Gateway deployment ID",
+            value=deployment.deployment_id
         )
