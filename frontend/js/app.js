@@ -7,6 +7,8 @@ let currentScreen = 'welcome';
 let surveyType = null;
 let companyId = null;
 let employeeId = null;
+let employeeName = null;
+let pendingFormData = null; // For handling form exists warning
 
 // Screen elements
 const screens = {
@@ -107,7 +109,7 @@ function handleKeyboardEvents(event) {
                     break;
                 case 'employeeId':
                     event.preventDefault();
-                    proceedWithEmployeeId();
+                    proceedWithEmployeeInfo();
                     break;
             }
         }
@@ -140,7 +142,7 @@ function startEmployeeAssessment() {
 /**
  * Proceed with company ID
  */
-function proceedWithCompanyId() {
+async function proceedWithCompanyId() {
     const input = document.getElementById('company-id-input');
     const id = input.value.trim();
     
@@ -161,19 +163,26 @@ function proceedWithCompanyId() {
     // Clear any previous error
     clearFieldError(input);
     
+    // Check if form already exists
+    const existingForm = await checkForExistingForm('company', companyId);
+    if (existingForm && existingForm.submitted_at) {
+        showFormExistsWarning('company', () => loadSurvey());
+        return;
+    }
+    
     // Load company survey
     loadSurvey();
 }
 
 /**
- * Proceed with employee ID
+ * Proceed with employee information (Company ID + Employee Name)
  */
-function proceedWithEmployeeId() {
+async function proceedWithEmployeeInfo() {
     const companyInput = document.getElementById('emp-company-id-input');
-    const employeeInput = document.getElementById('employee-id-input');
+    const employeeNameInput = document.getElementById('employee-name-input');
     
     const companyIdValue = companyInput.value.trim();
-    const employeeIdValue = employeeInput.value.trim();
+    const employeeNameValue = employeeNameInput.value.trim();
     
     let hasError = false;
     
@@ -188,15 +197,15 @@ function proceedWithEmployeeId() {
         clearFieldError(companyInput);
     }
     
-    // Validate employee ID
-    if (!employeeIdValue) {
-        showFieldError(employeeInput, 'Employee ID is required');
+    // Validate employee name
+    if (!employeeNameValue) {
+        showFieldError(employeeNameInput, 'Employee name is required');
         hasError = true;
-    } else if (!/^[a-zA-Z0-9._-]+$/.test(employeeIdValue)) {
-        showFieldError(employeeInput, 'Employee ID can only contain letters, numbers, periods, hyphens, and underscores');
+    } else if (employeeNameValue.length < 2) {
+        showFieldError(employeeNameInput, 'Employee name must be at least 2 characters');
         hasError = true;
     } else {
-        clearFieldError(employeeInput);
+        clearFieldError(employeeNameInput);
     }
     
     if (hasError) {
@@ -204,11 +213,149 @@ function proceedWithEmployeeId() {
     }
     
     companyId = companyIdValue;
-    employeeId = employeeIdValue;
-    console.log(`👤 Employee assessment: ${employeeId} @ ${companyId}`);
+    employeeName = employeeNameValue;
+    // Convert employee name to a safe ID for storage
+    employeeId = employeeNameValue.toLowerCase()
+        .replace(/\s+/g, '.')  // Replace spaces with dots
+        .replace(/[^a-z0-9._-]/g, ''); // Remove invalid characters
+    
+    console.log(`👤 Employee assessment: ${employeeName} (${employeeId}) @ ${companyId}`);
+    
+    // Check if form already exists
+    const existingForm = await checkForExistingForm('employee', companyId, employeeId);
+    if (existingForm && existingForm.submitted_at) {
+        showFormExistsWarning('employee', () => loadSurvey());
+        return;
+    }
     
     // Load employee survey
     loadSurvey();
+}
+
+/**
+ * Check for existing form in S3
+ * @param {string} type - 'company' or 'employee'
+ * @param {string} companyId - Company ID
+ * @param {string} employeeId - Employee ID (optional, for employee forms)
+ */
+async function checkForExistingForm(type, companyId, employeeId = null) {
+    try {
+        return await window.bakshAPI.getExistingResponse(type, companyId, employeeId);
+    } catch (error) {
+        console.log('No existing form found or error checking:', error.message);
+        return null;
+    }
+}
+
+/**
+ * Show form exists warning modal
+ * @param {string} type - 'company' or 'employee'
+ * @param {Function} proceedCallback - Function to call if user chooses to proceed
+ */
+function showFormExistsWarning(type, proceedCallback) {
+    const modal = document.getElementById('form-exists-modal');
+    const typeSpan = document.getElementById('form-exists-type');
+    
+    typeSpan.textContent = type === 'company' ? 'company' : 'employee';
+    pendingFormData = proceedCallback;
+    
+    modal.classList.remove('hidden');
+}
+
+/**
+ * Close form exists modal
+ */
+function closeFormExistsModal() {
+    const modal = document.getElementById('form-exists-modal');
+    modal.classList.add('hidden');
+    pendingFormData = null;
+}
+
+/**
+ * Proceed with creating new form (overwrite existing)
+ */
+function proceedWithNewForm() {
+    closeFormExistsModal();
+    if (pendingFormData) {
+        pendingFormData();
+        pendingFormData = null;
+    }
+}
+
+/**
+ * Load existing company form
+ */
+async function loadExistingCompanyForm() {
+    const input = document.getElementById('company-id-input');
+    const id = input.value.trim();
+    
+    if (!id) {
+        showFieldError(input, 'Please enter a Company ID first');
+        return;
+    }
+    
+    // Validate company ID format
+    if (!/^[a-zA-Z0-9_-]+$/.test(id)) {
+        showFieldError(input, 'Company ID can only contain letters, numbers, hyphens, and underscores');
+        return;
+    }
+    
+    try {
+        companyId = id;
+        surveyType = 'company';
+        clearFieldError(input);
+        
+        showMessage('Loading existing form...', 'info');
+        await loadSurvey();
+        
+    } catch (error) {
+        showMessage(`Failed to load existing form: ${window.bakshAPI.getErrorMessage(error)}`, 'error');
+    }
+}
+
+/**
+ * Load existing employee form
+ */
+async function loadExistingEmployeeForm() {
+    const companyInput = document.getElementById('emp-company-id-input');
+    const employeeNameInput = document.getElementById('employee-name-input');
+    
+    const companyIdValue = companyInput.value.trim();
+    const employeeNameValue = employeeNameInput.value.trim();
+    
+    let hasError = false;
+    
+    if (!companyIdValue) {
+        showFieldError(companyInput, 'Please enter a Company ID first');
+        hasError = true;
+    }
+    
+    if (!employeeNameValue) {
+        showFieldError(employeeNameInput, 'Please enter an Employee Name first');
+        hasError = true;
+    }
+    
+    if (hasError) {
+        return;
+    }
+    
+    try {
+        companyId = companyIdValue;
+        employeeName = employeeNameValue;
+        employeeId = employeeNameValue.toLowerCase()
+            .replace(/\s+/g, '.')
+            .replace(/[^a-z0-9._-]/g, '');
+        surveyType = 'employee';
+        
+        clearFieldError(companyInput);
+        clearFieldError(employeeNameInput);
+        
+        showMessage('Loading existing form...', 'info');
+        await loadSurvey();
+        
+    } catch (error) {
+        showMessage(`Failed to load existing form: ${window.bakshAPI.getErrorMessage(error)}`, 'error');
+    }
 }
 
 /**
@@ -219,7 +366,7 @@ async function loadSurvey() {
         showScreen('survey');
         
         // Load survey using survey manager
-        await window.surveyManager.loadSurvey(surveyType, companyId, employeeId);
+        await window.surveyManager.loadSurvey(surveyType, companyId, employeeId, employeeName);
         
     } catch (error) {
         console.error('Failed to load survey:', error);
@@ -265,6 +412,8 @@ function startOver() {
     surveyType = null;
     companyId = null;
     employeeId = null;
+    employeeName = null;
+    pendingFormData = null;
     
     // Clear form inputs
     const inputs = document.querySelectorAll('input');
@@ -515,7 +664,11 @@ window.addEventListener('beforeunload', cleanup);
 window.startCompanyAssessment = startCompanyAssessment;
 window.startEmployeeAssessment = startEmployeeAssessment;
 window.proceedWithCompanyId = proceedWithCompanyId;
-window.proceedWithEmployeeId = proceedWithEmployeeId;
+window.proceedWithEmployeeInfo = proceedWithEmployeeInfo;
+window.loadExistingCompanyForm = loadExistingCompanyForm;
+window.loadExistingEmployeeForm = loadExistingEmployeeForm;
+window.closeFormExistsModal = closeFormExistsModal;
+window.proceedWithNewForm = proceedWithNewForm;
 window.goBack = goBack;
 window.startOver = startOver;
 window.saveDraft = saveDraft;
@@ -529,7 +682,7 @@ if (typeof module !== 'undefined' && module.exports) {
         startCompanyAssessment,
         startEmployeeAssessment,
         proceedWithCompanyId,
-        proceedWithEmployeeId,
+        proceedWithEmployeeInfo,
         goBack,
         startOver,
         saveDraft
