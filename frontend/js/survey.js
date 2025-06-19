@@ -16,8 +16,9 @@ class SurveyManager {
      * @param {string} type - 'company' or 'employee'
      * @param {string} companyId - Company identifier
      * @param {string} employeeId - Employee identifier (for employee surveys)
+     * @param {string} employeeName - Employee display name (for employee surveys)
      */
-    async loadSurvey(type, companyId, employeeId = null) {
+    async loadSurvey(type, companyId, employeeId = null, employeeName = null) {
         try {
             // Show loading indicator
             this.showLoading(true);
@@ -30,10 +31,11 @@ class SurveyManager {
                 type,
                 companyId,
                 employeeId,
+                employeeName,
                 questions: this.surveyData.questions
             };
             
-            // Try to load existing responses
+            // Try to load existing responses from S3
             await this.loadExistingResponses();
             
             // Render the survey
@@ -65,7 +67,7 @@ class SurveyManager {
             fileUploadSection.classList.add('hidden');
         } else {
             surveyTitle.textContent = 'Employee AI & Data Readiness Assessment';
-            surveySubtitle.textContent = `Company: ${this.currentSurvey.companyId} | Employee: ${this.currentSurvey.employeeId}`;
+            surveySubtitle.textContent = `Company: ${this.currentSurvey.companyId} | Employee: ${this.currentSurvey.employeeName || this.currentSurvey.employeeId}`;
             fileUploadSection.classList.remove('hidden');
         }
         
@@ -118,6 +120,11 @@ class SurveyManager {
         
         // Show the form
         document.getElementById('survey-form').classList.remove('hidden');
+        
+        // Show loaded message if we loaded existing responses
+        if (Object.keys(this.currentResponses).length > 0) {
+            this.showMessage('Loaded existing form responses!', 'success');
+        }
     }
 
     /**
@@ -680,7 +687,7 @@ class SurveyManager {
     }
 
     /**
-     * Save draft responses - UPDATED to save to S3 via API
+     * Save draft responses - Save to S3 via API
      */
     async saveDraft() {
         try {
@@ -734,19 +741,36 @@ class SurveyManager {
             }));
             
             // Show feedback
-            this.showMessage('Draft saved successfully to server!', 'success');
+            this.showMessage('Progress saved successfully!', 'success');
             
         } catch (error) {
             console.error('Draft save error:', error);
-            this.showError(`Failed to save draft: ${window.bakshAPI.getErrorMessage(error)}`);
+            this.showError(`Failed to save progress: ${window.bakshAPI.getErrorMessage(error)}`);
         }
     }
 
     /**
-     * Load existing responses
+     * Load existing responses from S3 and localStorage
      */
     async loadExistingResponses() {
-        // Try to load from localStorage first (draft)
+        // Try to load from S3 first (server-saved responses)
+        try {
+            const existingResponse = await window.bakshAPI.getExistingResponse(
+                this.currentSurvey.type, 
+                this.currentSurvey.companyId, 
+                this.currentSurvey.employeeId
+            );
+            
+            if (existingResponse && existingResponse.data && existingResponse.data.responses) {
+                this.currentResponses = existingResponse.data.responses;
+                console.log('Loaded responses from S3:', this.currentResponses);
+                return;
+            }
+        } catch (error) {
+            console.log('No existing S3 response found:', error.message);
+        }
+        
+        // Fallback to localStorage (draft responses)
         const draftKey = `baksh-survey-draft-${this.currentSurvey.type}-${this.currentSurvey.companyId}`;
         if (this.currentSurvey.employeeId) {
             draftKey += `-${this.currentSurvey.employeeId}`;
@@ -757,7 +781,7 @@ class SurveyManager {
             try {
                 const draft = JSON.parse(draftData);
                 this.currentResponses = draft.responses || {};
-                console.log('Loaded draft responses:', this.currentResponses);
+                console.log('Loaded draft responses from localStorage:', this.currentResponses);
             } catch (error) {
                 console.warn('Failed to parse draft data:', error);
             }
