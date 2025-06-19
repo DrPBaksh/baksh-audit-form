@@ -86,6 +86,43 @@ class BakshAPI {
     }
 
     /**
+     * Get existing response from S3
+     * @param {string} type - 'company' or 'employee'
+     * @param {string} companyId - Company ID
+     * @param {string} employeeId - Employee ID (optional, for employee responses)
+     * @returns {Promise<Object>} Existing response data
+     */
+    async getExistingResponse(type, companyId, employeeId = null) {
+        if (!type || !['company', 'employee'].includes(type)) {
+            throw new Error('Type must be either "company" or "employee"');
+        }
+
+        if (!companyId) {
+            throw new Error('Company ID is required');
+        }
+
+        if (type === 'employee' && !employeeId) {
+            throw new Error('Employee ID is required for employee responses');
+        }
+
+        try {
+            let endpoint = `/responses?type=${type}&company_id=${encodeURIComponent(companyId)}`;
+            if (employeeId) {
+                endpoint += `&employee_id=${encodeURIComponent(employeeId)}`;
+            }
+
+            const response = await this.makeRequest('GET', endpoint);
+            return response;
+        } catch (error) {
+            // If 404, no existing response found - this is expected
+            if (error.message.includes('404') || error.message.includes('not found')) {
+                return null;
+            }
+            throw new Error(`Failed to get existing response: ${error.message}`);
+        }
+    }
+
+    /**
      * Save survey response
      * @param {Object} responseData - Survey response data
      * @returns {Promise<Object>} Save response
