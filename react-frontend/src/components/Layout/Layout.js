@@ -24,25 +24,41 @@ const Layout = ({ children }) => {
       <header className="bg-white shadow-sm border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            {/* Logo and Title */}
-            <div className="flex items-center space-x-4">
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                className="flex items-center space-x-3"
-              >
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
-                  <CogIcon className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold text-slate-900">
-                    DMGT AI Survey
-                  </h1>
-                  <p className="text-sm text-slate-500">
-                    AI & Data Readiness Assessment
-                  </p>
-                </div>
-              </motion.div>
-            </div>
+{/* Logo and Title */}
+<div className="flex items-center space-x-4">
+  <motion.div
+    whileHover={{ scale: 1.05 }}
+    className="flex items-center space-x-3"
+  >
+    <div className="w-10 h-10 flex items-center justify-center">
+      <img 
+        src="/logo.png" 
+        alt="DMGT Logo" 
+        className="w-10 h-10 object-contain"
+        onError={(e) => {
+          // Fallback to gradient cog if logo not found
+          e.target.style.display = 'none';
+          e.target.nextSibling.style.display = 'flex';
+        }}
+      />
+      {/* Fallback gradient cog (hidden by default) */}
+      <div 
+        className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center"
+        style={{ display: 'none' }}
+      >
+        <CogIcon className="w-6 h-6 text-white" />
+      </div>
+    </div>
+    <div>
+      <h1 className="text-xl font-bold text-slate-900">
+        DMGT Survey
+      </h1>
+      <p className="text-sm text-slate-500">
+        AI & Data Readiness Assessment
+      </p>
+    </div>
+  </motion.div>
+</div>
 
             {/* Navigation */}
             <nav className="flex space-x-1">

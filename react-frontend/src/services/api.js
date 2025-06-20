@@ -67,6 +67,41 @@ class ApiService {
   }
 
   /**
+   * List available company audits for reload
+   * @returns {Promise<Array>} List of companies with audits
+   */
+  async listCompanyAudits() {
+    const url = `${getEndpointUrl('listAudits')}?type=company`;
+    try {
+      return await this.makeRequest(url, { method: 'GET' });
+    } catch (error) {
+      // Return empty array if no audits found or endpoint not available
+      if (error.message.includes('404') || error.message.includes('not found')) {
+        return { companies: [] };
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * List available employee audits for a specific company
+   * @param {string} companyId - Company identifier
+   * @returns {Promise<Array>} List of employees with audits
+   */
+  async listEmployeeAudits(companyId) {
+    const url = `${getEndpointUrl('listAudits')}?type=employee&company_id=${companyId}`;
+    try {
+      return await this.makeRequest(url, { method: 'GET' });
+    } catch (error) {
+      // Return empty array if no audits found or endpoint not available
+      if (error.message.includes('404') || error.message.includes('not found')) {
+        return { employees: [] };
+      }
+      throw error;
+    }
+  }
+
+  /**
    * Save survey response
    * @param {Object} responseData - Response data to save
    * @returns {Promise<Object>} Save confirmation
@@ -428,5 +463,7 @@ export const {
   checkCompanyExists,
   validateFile,
   testFileUpload,
-  debugFileUpload
+  debugFileUpload,
+  listCompanyAudits,
+  listEmployeeAudits
 } = apiService;

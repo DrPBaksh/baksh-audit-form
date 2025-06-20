@@ -2,14 +2,14 @@
 set -euo pipefail
 
 #####################################
-# deploy.sh - Main deployment script
-# Deploys CDK infrastructure and frontend for Baksh Audit Form
+# deploy.sh - Backend deployment script
+# Deploys CDK infrastructure and backend resources only for Baksh Audit Form
+# Note: Frontend deployment is handled separately by react-frontend/deploy.sh
 #####################################
 
 # Script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CDK_DIR="$SCRIPT_DIR/cdk"
-FRONTEND_DIR="$SCRIPT_DIR/../frontend"
 LAMBDA_DIR="$SCRIPT_DIR/lambda"
 
 # Default values
@@ -45,6 +45,9 @@ while [[ $# -gt 0 ]]; do
             echo "  --owner=<n>        Set owner name for resource naming (default: current username)"
             echo "  --environment=<env>   Set environment (default: dev)"
             echo "  --help               Show this help message"
+            echo ""
+            echo "Note: This script deploys backend resources only."
+            echo "For React frontend deployment, use: cd ../react-frontend && ./deploy.sh"
             exit 0
             ;;
         *)
@@ -55,12 +58,13 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-echo "🚀 Starting Baksh Audit Form deployment..."
+echo "🚀 Starting Baksh Audit Form backend deployment..."
 echo "📋 Configuration:"
 echo "   Owner: $OWNER_NAME"
 echo "   Environment: $ENVIRONMENT"
 echo "   Infra Stack: $INFRA_STACK_NAME"
 echo "   API Stack: $API_STACK_NAME"
+echo "   Mode: Backend Only"
 echo ""
 
 ##################
@@ -203,56 +207,6 @@ function get_stack_output() {
     fi
 }
 
-function deploy_frontend() {
-    echo "🌐 Deploying frontend..."
-    
-    # Get S3 bucket and CloudFront distribution from stack outputs
-    WEBSITE_BUCKET=$(get_stack_output "$INFRA_STACK_NAME" "WebsiteBucketName")
-    DISTRIBUTION_ID=$(get_stack_output "$INFRA_STACK_NAME" "CloudFrontDistributionId")
-    API_URL=$(get_stack_output "$API_STACK_NAME" "ApiUrl")
-    
-    if [[ -z "$WEBSITE_BUCKET" ]]; then
-        echo "❌ Could not get website bucket name from stack outputs"
-        exit 1
-    fi
-    
-    if [[ -z "$API_URL" ]]; then
-        echo "❌ Could not get API URL from stack outputs"
-        exit 1
-    fi
-    
-    echo "📝 Configuration:"
-    echo "   Website Bucket: $WEBSITE_BUCKET"
-    echo "   API URL: $API_URL"
-    echo "   CloudFront Distribution: $DISTRIBUTION_ID"
-    
-    # Create frontend config file
-    echo "📝 Creating frontend configuration..."
-    cat > "$FRONTEND_DIR/js/config.js" << EOF
-// Auto-generated configuration
-window.APP_CONFIG = {
-    API_URL: '$API_URL',
-    OWNER: '$OWNER_NAME',
-    ENVIRONMENT: '$ENVIRONMENT'
-};
-EOF
-    
-    # Upload frontend files to S3
-    echo "📤 Uploading frontend files to S3..."
-    aws s3 sync "$FRONTEND_DIR/" "s3://$WEBSITE_BUCKET/" --delete
-    
-    # Invalidate CloudFront cache if distribution exists
-    if [[ -n "$DISTRIBUTION_ID" && "$DISTRIBUTION_ID" != "null" ]]; then
-        echo "🔄 Invalidating CloudFront cache..."
-        aws cloudfront create-invalidation \
-            --distribution-id "$DISTRIBUTION_ID" \
-            --paths "/*" > /dev/null
-        echo "✅ CloudFront invalidation submitted"
-    fi
-    
-    echo "✅ Frontend deployment complete"
-}
-
 function upload_sample_questions() {
     echo "📋 Uploading sample questions..."
     
@@ -280,25 +234,29 @@ function upload_sample_questions() {
 
 function display_results() {
     echo ""
-    echo "🎉 Deployment completed successfully!"
+    echo "🎉 Backend deployment completed successfully!"
     echo ""
     
     # Get outputs
-    CLOUDFRONT_DOMAIN=$(get_stack_output "$INFRA_STACK_NAME" "CloudFrontDomainName")
     API_URL=$(get_stack_output "$API_STACK_NAME" "ApiUrl")
     SURVEY_BUCKET=$(get_stack_output "$INFRA_STACK_NAME" "SurveyBucketName")
+    WEBSITE_BUCKET=$(get_stack_output "$INFRA_STACK_NAME" "WebsiteBucketName")
+    CLOUDFRONT_DOMAIN=$(get_stack_output "$INFRA_STACK_NAME" "CloudFrontDomainName")
     
-    echo "📊 Deployment Summary:"
-    echo "   Application URL: https://$CLOUDFRONT_DOMAIN"
+    echo "📊 Backend Deployment Summary:"
     echo "   API Endpoint: $API_URL"
     echo "   Survey Data Bucket: $SURVEY_BUCKET"
+    echo "   Website Bucket: $WEBSITE_BUCKET"
+    echo "   CloudFront Domain: $CLOUDFRONT_DOMAIN"
     echo "   Owner: $OWNER_NAME"
     echo "   Environment: $ENVIRONMENT"
     echo ""
     echo "🔗 Next Steps:"
-    echo "   1. Visit your application: https://$CLOUDFRONT_DOMAIN"
-    echo "   2. Test the survey functionality"
+    echo "   1. Deploy React frontend: cd ../react-frontend && ./deploy.sh --owner=$OWNER_NAME"
+    echo "   2. Test API endpoints: $API_URL"
     echo "   3. View responses in S3 bucket: $SURVEY_BUCKET"
+    echo ""
+    echo "💡 Note: Questions can be updated by modifying CSV files in ../data/ and running this script again."
     echo ""
 }
 
@@ -306,16 +264,15 @@ function display_results() {
 # Main Execution
 #########################
 
-echo "🏢 Baksh Audit Form - Deployment Script"
-echo "==========================================="
+echo "🏢 Baksh Audit Form - Backend Deployment"
+echo "=========================================="
 
 # Run deployment steps
 check_prerequisites
 setup_python_venv
 build_lambda_layers
 cdk_deploy
-deploy_frontend
 upload_sample_questions
 display_results
 
-echo "✅ All done! Your Baksh Audit Form is ready to use."
+echo "✅ Backend deployment complete! Deploy frontend separately with react-frontend/deploy.sh"
