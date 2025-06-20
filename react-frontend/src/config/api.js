@@ -5,11 +5,11 @@ const config = {
   // Default to localhost for development
   API_BASE_URL: process.env.REACT_APP_API_URL || 'http://localhost:3001',
   
-  // API endpoints
+  // API endpoints - matching the actual backend structure
   endpoints: {
-    questions: '/questions',
-    saveResponse: '/response',
-    getResponse: '/response'
+    questions: '/questions',       // GET /questions?type=company|employee
+    saveResponse: '/responses',    // POST /responses  
+    getResponse: '/responses'      // GET /responses?type=company|employee&company_id=...
   },
   
   // Development mode detection
