@@ -67,7 +67,7 @@ const SurveyForm = ({
     }, 30000); // Auto-save every 30 seconds
 
     return () => clearInterval(autoSaveInterval);
-  }, [responses, companyId, employeeId, surveyType]);
+  }, [responses, companyId, employeeId, surveyType, files]); // Added files to dependency
 
   // Check company status when company ID changes
   useEffect(() => {
@@ -159,12 +159,19 @@ const SurveyForm = ({
         saveData.employee_id = employeeId;
       }
 
-      await apiService.saveResponse(saveData);
+      // Include files in auto-save for employee surveys
+      if (files.length > 0 && surveyType === 'employee') {
+        console.log('🔄 Auto-saving with files:', files.length);
+        await apiService.saveResponseWithFiles(saveData, files);
+      } else {
+        await apiService.saveResponse(saveData);
+      }
+      
       console.log('Auto-saved successfully');
     } catch (error) {
       console.warn('Auto-save failed:', error);
     }
-  }, [responses, companyId, employeeId, surveyType]);
+  }, [responses, companyId, employeeId, surveyType, files]);
 
   const saveCurrentProgress = async () => {
     if (!companyId || (surveyType === 'employee' && !employeeId)) {
@@ -186,8 +193,15 @@ const SurveyForm = ({
         saveData.employee_id = employeeId;
       }
 
-      await apiService.saveResponse(saveData);
-      toast.success('Progress saved successfully!');
+      // Save with files for employee surveys
+      if (files.length > 0 && surveyType === 'employee') {
+        console.log('💾 Saving progress with files:', files.map(f => ({ name: f.name, size: f.size })));
+        await apiService.saveResponseWithFiles(saveData, files);
+        toast.success(`Progress and ${files.length} file(s) saved successfully!`);
+      } else {
+        await apiService.saveResponse(saveData);
+        toast.success('Progress saved successfully!');
+      }
     } catch (error) {
       console.error('Error saving progress:', error);
       toast.error('Failed to save progress');
@@ -338,7 +352,7 @@ const SurveyForm = ({
       }
 
       if (files.length > 0 && surveyType === 'employee') {
-        console.log('📤 Submitting with files:', files.map(f => ({ name: f.name, size: f.size })));
+        console.log('📤 Final submission with files:', files.map(f => ({ name: f.name, size: f.size })));
         await apiService.saveResponseWithFiles(submitData, files);
       } else {
         await apiService.saveResponse(submitData);
@@ -452,7 +466,7 @@ const SurveyForm = ({
               ) : (
                 <>
                   <BookmarkIcon className="w-4 h-4" />
-                  <span>Save Page</span>
+                  <span>Save {files.length > 0 && surveyType === 'employee' ? '+ Files' : 'Page'}</span>
                 </>
               )}
             </button>
@@ -593,7 +607,7 @@ const SurveyForm = ({
                 <span>Supporting Documents</span>
               </h3>
               <p className="text-sm text-slate-600 mb-4">
-                Upload any relevant documents that support your responses (optional).
+                Upload any relevant documents that support your responses. Files will be saved when you save progress or submit the survey.
               </p>
               <FileUpload
                 files={files}
@@ -642,7 +656,7 @@ const SurveyForm = ({
                 ) : (
                   <>
                     <BookmarkIcon className="w-4 h-4" />
-                    <span>Save</span>
+                    <span>Save {files.length > 0 && surveyType === 'employee' ? '+ Files' : ''}</span>
                   </>
                 )}
               </button>
