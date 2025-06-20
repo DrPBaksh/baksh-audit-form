@@ -155,16 +155,27 @@ npm ci
 # Auto-detect API URL if not provided
 if [[ -z "$API_URL" ]]; then
     print_status "Auto-detecting API URL from backend deployment..."
+    
+    # Correct path to the API outputs file
     BACKEND_OUTPUT_FILE="$PROJECT_ROOT/backend/cdk/api-outputs.json"
     
     if [[ -f "$BACKEND_OUTPUT_FILE" ]]; then
-        # Extract API URL from backend outputs
-        API_URL=$(cat "$BACKEND_OUTPUT_FILE" | jq -r '.. | objects | select(has("ApiUrl")) | .ApiUrl' | head -1)
+        # Construct the expected stack name to match backend deployment
+        API_STACK_NAME="baksh-audit-${OWNER}-${ENVIRONMENT}-Api"
         
-        if [[ -n "$API_URL" && "$API_URL" != "null" ]]; then
+        # Extract API URL using the correct stack structure
+        API_URL=$(cat "$BACKEND_OUTPUT_FILE" | jq -r ".\"$API_STACK_NAME\".ApiUrl // empty" 2>/dev/null)
+        
+        if [[ -n "$API_URL" && "$API_URL" != "null" && "$API_URL" != "" ]]; then
             print_success "Detected API URL: $API_URL"
         else
             print_warning "Could not auto-detect API URL from backend outputs"
+            print_warning "Backend output file contents:"
+            if command -v jq &> /dev/null; then
+                cat "$BACKEND_OUTPUT_FILE" | jq . 2>/dev/null || cat "$BACKEND_OUTPUT_FILE"
+            else
+                cat "$BACKEND_OUTPUT_FILE"
+            fi
             print_warning "Using default localhost URL for development"
             API_URL="http://localhost:3001"
         fi
@@ -215,16 +226,22 @@ fi
 if [[ -z "$BUCKET_NAME" ]]; then
     print_status "Auto-detecting S3 bucket name..."
     
-    # Try to find bucket from backend outputs
-    if [[ -f "$BACKEND_OUTPUT_FILE" ]]; then
-        BUCKET_NAME=$(cat "$BACKEND_OUTPUT_FILE" | jq -r '.. | objects | select(has("WebsiteBucket")) | .WebsiteBucket' | head -1)
+    # Try to find bucket from infrastructure outputs
+    INFRA_OUTPUT_FILE="$PROJECT_ROOT/backend/cdk/infra-outputs.json"
+    
+    if [[ -f "$INFRA_OUTPUT_FILE" ]]; then
+        # Construct the expected stack name
+        INFRA_STACK_NAME="baksh-audit-${OWNER}-${ENVIRONMENT}-Infra"
         
-        if [[ -z "$BUCKET_NAME" || "$BUCKET_NAME" == "null" ]]; then
+        # Extract bucket name using the correct stack structure
+        BUCKET_NAME=$(cat "$INFRA_OUTPUT_FILE" | jq -r ".\"$INFRA_STACK_NAME\".WebsiteBucketName // empty" 2>/dev/null)
+        
+        if [[ -z "$BUCKET_NAME" || "$BUCKET_NAME" == "null" || "$BUCKET_NAME" == "" ]]; then
             # Fallback: construct bucket name
-            BUCKET_NAME="baksh-audit-form-$OWNER-$ENVIRONMENT-website"
+            BUCKET_NAME="baksh-audit-$OWNER-$ENVIRONMENT-website"
         fi
     else
-        BUCKET_NAME="baksh-audit-form-$OWNER-$ENVIRONMENT-website"
+        BUCKET_NAME="baksh-audit-$OWNER-$ENVIRONMENT-website"
     fi
     
     print_status "Using bucket name: $BUCKET_NAME"
@@ -262,17 +279,18 @@ print_success "Files uploaded to S3"
 if [[ -z "$CLOUDFRONT_ID" ]]; then
     print_status "Auto-detecting CloudFront distribution ID..."
     
-    if [[ -f "$BACKEND_OUTPUT_FILE" ]]; then
-        CLOUDFRONT_ID=$(cat "$BACKEND_OUTPUT_FILE" | jq -r '.. | objects | select(has("CloudFrontDistributionId")) | .CloudFrontDistributionId' | head -1)
+    if [[ -f "$INFRA_OUTPUT_FILE" ]]; then
+        INFRA_STACK_NAME="baksh-audit-${OWNER}-${ENVIRONMENT}-Infra"
+        CLOUDFRONT_ID=$(cat "$INFRA_OUTPUT_FILE" | jq -r ".\"$INFRA_STACK_NAME\".CloudFrontDistributionId // empty" 2>/dev/null)
         
-        if [[ -n "$CLOUDFRONT_ID" && "$CLOUDFRONT_ID" != "null" ]]; then
+        if [[ -n "$CLOUDFRONT_ID" && "$CLOUDFRONT_ID" != "null" && "$CLOUDFRONT_ID" != "" ]]; then
             print_status "Detected CloudFront distribution: $CLOUDFRONT_ID"
         fi
     fi
 fi
 
 # Invalidate CloudFront cache if distribution ID is available
-if [[ -n "$CLOUDFRONT_ID" && "$CLOUDFRONT_ID" != "null" ]]; then
+if [[ -n "$CLOUDFRONT_ID" && "$CLOUDFRONT_ID" != "null" && "$CLOUDFRONT_ID" != "" ]]; then
     print_status "Invalidating CloudFront cache..."
     
     INVALIDATION_ID=$(aws cloudfront create-invalidation \
@@ -288,10 +306,13 @@ else
 fi
 
 # Get website URL
-if [[ -f "$BACKEND_OUTPUT_FILE" ]]; then
-    WEBSITE_URL=$(cat "$BACKEND_OUTPUT_FILE" | jq -r '.. | objects | select(has("WebsiteUrl")) | .WebsiteUrl' | head -1)
+WEBSITE_URL=""
+if [[ -f "$INFRA_OUTPUT_FILE" ]]; then
+    INFRA_STACK_NAME="baksh-audit-${OWNER}-${ENVIRONMENT}-Infra"
+    CLOUDFRONT_DOMAIN=$(cat "$INFRA_OUTPUT_FILE" | jq -r ".\"$INFRA_STACK_NAME\".CloudFrontDomainName // empty" 2>/dev/null)
     
-    if [[ -n "$WEBSITE_URL" && "$WEBSITE_URL" != "null" ]]; then
+    if [[ -n "$CLOUDFRONT_DOMAIN" && "$CLOUDFRONT_DOMAIN" != "null" && "$CLOUDFRONT_DOMAIN" != "" ]]; then
+        WEBSITE_URL="https://$CLOUDFRONT_DOMAIN"
         print_success "Website URL: $WEBSITE_URL"
     fi
 fi
@@ -306,11 +327,11 @@ print_status "  Environment: $ENVIRONMENT"
 print_status "  S3 Bucket: $BUCKET_NAME"
 print_status "  API URL: $API_URL"
 
-if [[ -n "$CLOUDFRONT_ID" && "$CLOUDFRONT_ID" != "null" ]]; then
+if [[ -n "$CLOUDFRONT_ID" && "$CLOUDFRONT_ID" != "null" && "$CLOUDFRONT_ID" != "" ]]; then
     print_status "  CloudFront: $CLOUDFRONT_ID"
 fi
 
-if [[ -n "$WEBSITE_URL" && "$WEBSITE_URL" != "null" ]]; then
+if [[ -n "$WEBSITE_URL" ]]; then
     print_status "  Website: $WEBSITE_URL"
 fi
 
@@ -318,4 +339,7 @@ print_status ""
 print_status "Next steps:"
 print_status "  1. Wait for CloudFront cache invalidation to complete (if applicable)"
 print_status "  2. Test the website functionality"
-print_status "  3. Run the test suite: cd $PROJECT_ROOT && ./run_tests.sh"
+if [[ -n "$WEBSITE_URL" ]]; then
+    print_status "  3. Visit: $WEBSITE_URL"
+fi
+print_status "  4. Run the test suite: cd $PROJECT_ROOT && ./run_tests.sh"
