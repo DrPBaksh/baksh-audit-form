@@ -1,16 +1,19 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 import { 
   CloudArrowUpIcon, 
   DocumentIcon,
   XMarkIcon,
   ExclamationTriangleIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  InformationCircleIcon
 } from '@heroicons/react/24/outline';
 
 const FileUpload = ({ files = [], onChange, maxFiles = 5, maxSizeInMB = 10 }) => {
   const [dragActive, setDragActive] = useState(false);
   const [errors, setErrors] = useState([]);
+  const [uploadStatus, setUploadStatus] = useState('');
   const fileInputRef = useRef(null);
 
   const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
@@ -27,6 +30,25 @@ const FileUpload = ({ files = [], onChange, maxFiles = 5, maxSizeInMB = 10 }) =>
     if (files.some(existingFile => existingFile.name === file.name)) {
       errors.push(`File "${file.name}" is already uploaded.`);
     }
+
+    // Check file type (allow common document and image types)
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/gif',
+      'text/plain',
+      'text/csv'
+    ];
+
+    if (!allowedTypes.includes(file.type) && file.type !== '') {
+      errors.push(`File "${file.name}" type (${file.type}) is not supported. Please upload PDF, Word, Excel, image, or text files.`);
+    }
     
     return errors;
   };
@@ -36,14 +58,25 @@ const FileUpload = ({ files = [], onChange, maxFiles = 5, maxSizeInMB = 10 }) =>
     let allErrors = [];
     let validFiles = [];
 
+    setUploadStatus(`Processing ${fileArray.length} file(s)...`);
+
     // Check total file count
     if (files.length + fileArray.length > maxFiles) {
       allErrors.push(`Maximum ${maxFiles} files allowed. Currently have ${files.length} files.`);
+      setUploadStatus('');
+      setErrors(allErrors);
       return;
     }
 
     // Validate each file
     fileArray.forEach(file => {
+      console.log('📁 File Details:', {
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        lastModified: file.lastModified
+      });
+
       const fileErrors = validateFile(file);
       if (fileErrors.length > 0) {
         allErrors = [...allErrors, ...fileErrors];
@@ -53,10 +86,19 @@ const FileUpload = ({ files = [], onChange, maxFiles = 5, maxSizeInMB = 10 }) =>
     });
 
     setErrors(allErrors);
+    setUploadStatus('');
 
     // Add valid files
     if (validFiles.length > 0) {
       onChange([...files, ...validFiles]);
+      toast.success(`${validFiles.length} file(s) ready for upload`);
+      
+      // Log file upload details for debugging
+      console.log('📤 Files ready for upload:', validFiles.map(f => ({
+        name: f.name,
+        type: f.type,
+        size: f.size
+      })));
     }
 
     // Clear errors after 5 seconds
@@ -89,11 +131,15 @@ const FileUpload = ({ files = [], onChange, maxFiles = 5, maxSizeInMB = 10 }) =>
     if (e.target.files && e.target.files[0]) {
       handleFiles(e.target.files);
     }
+    // Reset input value to allow selecting the same file again
+    e.target.value = '';
   };
 
   const removeFile = (indexToRemove) => {
+    const removedFile = files[indexToRemove];
     const updatedFiles = files.filter((_, index) => index !== indexToRemove);
     onChange(updatedFiles);
+    toast.success(`Removed ${removedFile.name}`);
   };
 
   const formatFileSize = (bytes) => {
@@ -125,13 +171,49 @@ const FileUpload = ({ files = [], onChange, maxFiles = 5, maxSizeInMB = 10 }) =>
       case 'png':
       case 'gif':
         return <DocumentIcon className={`${iconClass} text-purple-500`} />;
+      case 'txt':
+      case 'csv':
+        return <DocumentIcon className={`${iconClass} text-gray-500`} />;
       default:
         return <DocumentIcon className={`${iconClass} text-slate-500`} />;
     }
   };
 
+  const getFileTypeDisplay = (file) => {
+    if (file.type) {
+      return file.type;
+    }
+    const extension = file.name.split('.').pop()?.toLowerCase();
+    return extension ? `*.${extension}` : 'Unknown';
+  };
+
   return (
     <div className="space-y-4">
+      {/* Debug Information */}
+      {files.length > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <div className="flex items-start space-x-2">
+            <InformationCircleIcon className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+            <div className="text-sm">
+              <p className="font-medium text-blue-900">Upload Status</p>
+              <p className="text-blue-700">
+                {files.length} file(s) selected. Files will be uploaded when you submit the survey.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upload Status */}
+      {uploadStatus && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+          <div className="flex items-center space-x-2">
+            <div className="animate-spin rounded-full h-4 w-4 border-b border-yellow-600"></div>
+            <span className="text-sm text-yellow-800">{uploadStatus}</span>
+          </div>
+        </div>
+      )}
+
       {/* Error Messages */}
       <AnimatePresence>
         {errors.length > 0 && (
@@ -182,6 +264,7 @@ const FileUpload = ({ files = [], onChange, maxFiles = 5, maxSizeInMB = 10 }) =>
           ref={fileInputRef}
           type="file"
           multiple
+          accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.txt,.csv"
           onChange={handleFileSelect}
           className="hidden"
           disabled={files.length >= maxFiles}
@@ -214,6 +297,7 @@ const FileUpload = ({ files = [], onChange, maxFiles = 5, maxSizeInMB = 10 }) =>
               }
             </p>
             <p className="text-xs text-slate-400 mt-2">
+              Supported: PDF, Word, Excel, PowerPoint, Images, Text files<br/>
               Maximum file size: {maxSizeInMB}MB per file
             </p>
           </div>
@@ -231,7 +315,7 @@ const FileUpload = ({ files = [], onChange, maxFiles = 5, maxSizeInMB = 10 }) =>
           >
             <h4 className="text-sm font-medium text-slate-900 flex items-center space-x-2">
               <CheckCircleIcon className="w-4 h-4 text-green-500" />
-              <span>Uploaded Files ({files.length})</span>
+              <span>Files Ready for Upload ({files.length})</span>
             </h4>
 
             <div className="space-y-2">
@@ -244,15 +328,17 @@ const FileUpload = ({ files = [], onChange, maxFiles = 5, maxSizeInMB = 10 }) =>
                   transition={{ duration: 0.3, delay: index * 0.1 }}
                   className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200"
                 >
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-3 min-w-0 flex-1">
                     {getFileIcon(file.name)}
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-slate-900 truncate">
                         {file.name}
                       </p>
-                      <p className="text-xs text-slate-500">
-                        {formatFileSize(file.size)}
-                      </p>
+                      <div className="flex items-center space-x-2 text-xs text-slate-500">
+                        <span>{formatFileSize(file.size)}</span>
+                        <span>•</span>
+                        <span>{getFileTypeDisplay(file)}</span>
+                      </div>
                     </div>
                   </div>
                   
@@ -260,13 +346,18 @@ const FileUpload = ({ files = [], onChange, maxFiles = 5, maxSizeInMB = 10 }) =>
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
                     onClick={() => removeFile(index)}
-                    className="p-1 text-slate-400 hover:text-red-500 transition-colors duration-200"
+                    className="p-1 text-slate-400 hover:text-red-500 transition-colors duration-200 flex-shrink-0"
                     title="Remove file"
                   >
                     <XMarkIcon className="w-5 h-5" />
                   </motion.button>
                 </motion.div>
               ))}
+            </div>
+
+            {/* File Upload Instructions */}
+            <div className="text-xs text-slate-500 bg-slate-50 p-2 rounded border">
+              <p>💡 <strong>Note:</strong> Files will be uploaded to S3 when you submit the survey. Make sure to complete all required fields before submitting.</p>
             </div>
           </motion.div>
         )}
