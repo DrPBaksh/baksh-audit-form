@@ -189,7 +189,7 @@ const FileUpload = ({ files = [], onChange, maxFiles = 5, maxSizeInMB = 10 }) =>
 
   return (
     <div className="space-y-4">
-      {/* Debug Information */}
+      {/* Status Information */}
       {files.length > 0 && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
           <div className="flex items-start space-x-2">
@@ -197,7 +197,7 @@ const FileUpload = ({ files = [], onChange, maxFiles = 5, maxSizeInMB = 10 }) =>
             <div className="text-sm">
               <p className="font-medium text-blue-900">Upload Status</p>
               <p className="text-blue-700">
-                {files.length} file(s) selected. Files will be uploaded when you submit the survey.
+                {files.length} file(s) selected. Files will be uploaded to S3 when you save progress or submit the survey.
               </p>
             </div>
           </div>
@@ -357,7 +357,7 @@ const FileUpload = ({ files = [], onChange, maxFiles = 5, maxSizeInMB = 10 }) =>
 
             {/* File Upload Instructions */}
             <div className="text-xs text-slate-500 bg-slate-50 p-2 rounded border">
-              <p>💡 <strong>Note:</strong> Files will be uploaded to S3 when you submit the survey. Make sure to complete all required fields before submitting.</p>
+              <p>💡 <strong>Note:</strong> Files will be uploaded to S3 when you save progress or submit the survey. Use the "Save Page" or "Save + Files" button to upload immediately.</p>
             </div>
           </motion.div>
         )}
