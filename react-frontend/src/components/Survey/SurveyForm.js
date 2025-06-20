@@ -7,7 +7,11 @@ import {
   ArrowRightIcon, 
   CheckCircleIcon,
   ExclamationTriangleIcon,
-  CloudArrowUpIcon
+  CloudArrowUpIcon,
+  BookmarkIcon,
+  DocumentArrowDownIcon,
+  BuildingOfficeIcon,
+  UserIcon
 } from '@heroicons/react/24/outline';
 
 import QuestionRenderer from './QuestionRenderer';
@@ -36,9 +40,11 @@ const SurveyForm = ({
   // Form identification
   const [companyId, setCompanyId] = useState('');
   const [employeeId, setEmployeeId] = useState('');
+  const [companyStatus, setCompanyStatus] = useState(''); // 'unknown', 'existing', 'new'
+  const [checkingCompany, setCheckingCompany] = useState(false);
   
   // Progress tracking
-  const questionsPerPage = 5;
+  const questionsPerPage = 3; // Reduced for better space utilization
   const totalPages = Math.ceil(questions.length / questionsPerPage);
   const currentQuestions = questions.slice(
     currentPage * questionsPerPage,
@@ -61,6 +67,15 @@ const SurveyForm = ({
     return () => clearInterval(autoSaveInterval);
   }, [responses, companyId, employeeId, surveyType]);
 
+  // Check company status when company ID changes
+  useEffect(() => {
+    if (companyId.trim()) {
+      checkCompanyStatus(companyId.trim());
+    } else {
+      setCompanyStatus('');
+    }
+  }, [companyId]);
+
   const loadQuestions = async () => {
     try {
       setLoading(true);
@@ -74,6 +89,54 @@ const SurveyForm = ({
     } catch (error) {
       console.error('Error loading questions:', error);
       toast.error(`Failed to load ${surveyType} questions: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const checkCompanyStatus = async (companyIdToCheck) => {
+    try {
+      setCheckingCompany(true);
+      const existingResponse = await apiService.getResponse(surveyType, companyIdToCheck, surveyType === 'employee' ? employeeId : null);
+      
+      if (existingResponse) {
+        setCompanyStatus('existing');
+        toast.success('Company recognized! You can load previous responses if needed.', { duration: 5000 });
+      } else {
+        setCompanyStatus('new');
+        toast.info('New company detected. Starting fresh assessment.', { duration: 4000 });
+      }
+    } catch (error) {
+      setCompanyStatus('new');
+      toast.info('New company detected. Starting fresh assessment.', { duration: 4000 });
+    } finally {
+      setCheckingCompany(false);
+    }
+  };
+
+  const loadExistingResponse = async () => {
+    if (!companyId || (surveyType === 'employee' && !employeeId)) {
+      toast.error('Please enter valid IDs first');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const existingResponse = await apiService.getResponse(
+        surveyType, 
+        companyId, 
+        surveyType === 'employee' ? employeeId : null
+      );
+      
+      if (existingResponse && existingResponse.responses) {
+        setResponses(existingResponse.responses);
+        toast.success('Previous responses loaded successfully!');
+      } else {
+        toast.info('No previous responses found.');
+      }
+    } catch (error) {
+      console.error('Error loading responses:', error);
+      toast.error('Failed to load previous responses');
     } finally {
       setLoading(false);
     }
@@ -100,6 +163,36 @@ const SurveyForm = ({
       console.warn('Auto-save failed:', error);
     }
   }, [responses, companyId, employeeId, surveyType]);
+
+  const saveCurrentProgress = async () => {
+    if (!companyId || (surveyType === 'employee' && !employeeId)) {
+      toast.error('Please enter valid IDs first');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const saveData = {
+        type: surveyType,
+        company_id: companyId,
+        responses,
+        auto_save: false,
+        page_save: true
+      };
+
+      if (surveyType === 'employee') {
+        saveData.employee_id = employeeId;
+      }
+
+      await apiService.saveResponse(saveData);
+      toast.success('Progress saved successfully!');
+    } catch (error) {
+      console.error('Error saving progress:', error);
+      toast.error('Failed to save progress');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleResponseChange = (questionId, value) => {
     setResponses(prev => ({
@@ -254,54 +347,128 @@ const SurveyForm = ({
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="max-w-6xl mx-auto space-y-6">
       {/* Header */}
-      <div className="text-center space-y-4">
-        <h1 className="text-3xl font-bold text-slate-900">{title}</h1>
-        <p className="text-lg text-slate-600 max-w-2xl mx-auto">{description}</p>
+      <div className="text-center space-y-3">
+        <h1 className="text-2xl md:text-3xl font-bold text-slate-900">{title}</h1>
+        <p className="text-base md:text-lg text-slate-600 max-w-3xl mx-auto">{description}</p>
         
         {/* Completion Status */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-blue-900">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 max-w-lg mx-auto">
+          <div className="flex items-center justify-between text-sm">
+            <span className="font-medium text-blue-900">
               Progress: {getCompletionPercentage()}% Complete
             </span>
-            <span className="text-sm text-blue-700">
+            <span className="text-blue-700">
               {Object.keys(responses).length} / {questions.length} answered
             </span>
+          </div>
+          <div className="w-full bg-blue-200 rounded-full h-2 mt-2">
+            <div 
+              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${getCompletionPercentage()}%` }}
+            ></div>
           </div>
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-4 gap-8">
+      <div className="grid lg:grid-cols-4 gap-6">
         {/* Progress Sidebar */}
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-1 space-y-4">
           <ProgressIndicator
             currentSection={currentPage}
             totalSections={totalPages}
             sections={Array.from({ length: totalPages }, (_, i) => `Page ${i + 1}`)}
           />
+          
+          {/* Quick Actions */}
+          <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 space-y-3">
+            <h4 className="font-medium text-slate-900 text-sm">Quick Actions</h4>
+            
+            <button
+              onClick={saveCurrentProgress}
+              disabled={saving || !companyId || (surveyType === 'employee' && !employeeId)}
+              className={`
+                w-full flex items-center justify-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors
+                ${saving || !companyId || (surveyType === 'employee' && !employeeId)
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
+                }
+              `}
+            >
+              {saving ? (
+                <>
+                  <div className="animate-spin rounded-full h-3 w-3 border-b border-blue-600"></div>
+                  <span>Saving...</span>
+                </>
+              ) : (
+                <>
+                  <BookmarkIcon className="w-4 h-4" />
+                  <span>Save Page</span>
+                </>
+              )}
+            </button>
+
+            {companyStatus === 'existing' && (
+              <button
+                onClick={loadExistingResponse}
+                disabled={loading}
+                className="w-full flex items-center justify-center space-x-2 px-3 py-2 bg-green-50 text-green-700 rounded-md text-sm font-medium hover:bg-green-100 border border-green-200 transition-colors"
+              >
+                <DocumentArrowDownIcon className="w-4 h-4" />
+                <span>Load Previous</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Main Content */}
-        <div className="lg:col-span-3 space-y-6">
+        <div className="lg:col-span-3 space-y-4">
           {/* Form Identification */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
-            <h3 className="text-lg font-medium text-slate-900 mb-4">
-              Survey Information
+          <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm border border-slate-200">
+            <h3 className="text-lg font-medium text-slate-900 mb-4 flex items-center space-x-2">
+              {surveyType === 'company' ? (
+                <BuildingOfficeIcon className="w-5 h-5" />
+              ) : (
+                <UserIcon className="w-5 h-5" />
+              )}
+              <span>Survey Information</span>
             </h3>
+            
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   Company ID *
                 </label>
-                <input
-                  type="text"
-                  value={companyId}
-                  onChange={(e) => setCompanyId(e.target.value)}
-                  placeholder="Enter company identifier"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={companyId}
+                    onChange={(e) => setCompanyId(e.target.value)}
+                    placeholder="Enter company identifier"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  {checkingCompany && (
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b border-blue-600"></div>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Company Status Indicator */}
+                {companyStatus && (
+                  <div className={`mt-2 text-xs flex items-center space-x-1 ${
+                    companyStatus === 'existing' ? 'text-green-600' : 'text-blue-600'
+                  }`}>
+                    <CheckCircleIcon className="w-3 h-3" />
+                    <span>
+                      {companyStatus === 'existing' 
+                        ? 'Company recognized in system' 
+                        : 'New company - will create fresh assessment'
+                      }
+                    </span>
+                  </div>
+                )}
               </div>
               
               {surveyType === 'employee' && (
@@ -329,7 +496,7 @@ const SurveyForm = ({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -50 }}
               transition={{ duration: 0.3 }}
-              className="space-y-6"
+              className="space-y-4"
             >
               {currentQuestions.map((question, index) => (
                 <QuestionRenderer
@@ -345,8 +512,8 @@ const SurveyForm = ({
 
           {/* File Upload (Employee surveys only) */}
           {showFileUpload && surveyType === 'employee' && (
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
-              <h3 className="text-lg font-medium text-slate-900 mb-4 flex items-center space-x-2">
+            <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm border border-slate-200">
+              <h3 className="text-lg font-medium text-slate-900 mb-3 flex items-center space-x-2">
                 <CloudArrowUpIcon className="w-5 h-5" />
                 <span>Supporting Documents</span>
               </h3>
@@ -363,7 +530,7 @@ const SurveyForm = ({
           )}
 
           {/* Navigation */}
-          <div className="flex items-center justify-between pt-6 border-t border-slate-200">
+          <div className="flex items-center justify-between pt-4 border-t border-slate-200">
             <button
               onClick={handlePrevious}
               disabled={currentPage === 0}
@@ -379,10 +546,37 @@ const SurveyForm = ({
               <span>Previous</span>
             </button>
 
-            <div className="text-center">
-              <span className="text-sm text-slate-500">
-                Page {currentPage + 1} of {totalPages}
-              </span>
+            <div className="flex items-center space-x-4">
+              {/* Save Progress Button */}
+              <button
+                onClick={saveCurrentProgress}
+                disabled={saving || !companyId || (surveyType === 'employee' && !employeeId)}
+                className={`
+                  flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-colors
+                  ${saving || !companyId || (surveyType === 'employee' && !employeeId)
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border border-yellow-200'
+                  }
+                `}
+              >
+                {saving ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b border-yellow-600"></div>
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <BookmarkIcon className="w-4 h-4" />
+                    <span>Save</span>
+                  </>
+                )}
+              </button>
+
+              <div className="text-center">
+                <span className="text-sm text-slate-500">
+                  Page {currentPage + 1} of {totalPages}
+                </span>
+              </div>
             </div>
 
             {currentPage < totalPages - 1 ? (

@@ -97,6 +97,26 @@ class ApiService {
   }
 
   /**
+   * Check if a company exists in the system
+   * @param {string} companyId - Company identifier
+   * @returns {Promise<boolean>} Whether company exists
+   */
+  async checkCompanyExists(companyId) {
+    try {
+      // Try to get any response for this company (start with company type)
+      const companyResponse = await this.getResponse('company', companyId);
+      if (companyResponse) return true;
+
+      // If no company response, check if there are any employee responses
+      // This is less efficient but more thorough
+      const employeeResponse = await this.getResponse('employee', companyId, 'any');
+      return !!employeeResponse;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
    * Upload file as base64
    * @param {File} file - File to upload
    * @returns {Promise<Object>} File data ready for API
@@ -126,6 +146,47 @@ class ApiService {
   }
 
   /**
+   * Validate file upload
+   * @param {File} file - File to validate
+   * @param {number} maxSizeInMB - Maximum file size in MB
+   * @returns {Object} Validation result
+   */
+  validateFile(file, maxSizeInMB = 10) {
+    const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
+    
+    // Check file size
+    if (file.size > maxSizeInBytes) {
+      return {
+        valid: false,
+        error: `File size exceeds ${maxSizeInMB}MB limit`
+      };
+    }
+
+    // Check file type (allow common document and image types)
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'text/plain',
+      'text/csv'
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      return {
+        valid: false,
+        error: 'File type not supported. Please upload PDF, Word, Excel, image, or text files.'
+      };
+    }
+
+    return { valid: true };
+  }
+
+  /**
    * Save response with file uploads
    * @param {Object} responseData - Response data
    * @param {File[]} files - Array of files to upload
@@ -133,6 +194,14 @@ class ApiService {
    */
   async saveResponseWithFiles(responseData, files = []) {
     try {
+      // Validate all files first
+      for (const file of files) {
+        const validation = this.validateFile(file);
+        if (!validation.valid) {
+          throw new Error(`File validation failed for ${file.name}: ${validation.error}`);
+        }
+      }
+
       // Prepare files for upload
       const preparedFiles = await Promise.all(
         files.map(file => this.prepareFileForUpload(file))
@@ -166,6 +235,26 @@ class ApiService {
       return false;
     }
   }
+
+  /**
+   * Test file upload functionality
+   * @returns {Promise<boolean>} File upload capability
+   */
+  async testFileUpload() {
+    try {
+      // Create a small test file
+      const testContent = 'Test file for upload validation';
+      const testBlob = new Blob([testContent], { type: 'text/plain' });
+      const testFile = new File([testBlob], 'test.txt', { type: 'text/plain' });
+
+      // Validate the test file
+      const validation = this.validateFile(testFile, 1); // 1MB limit for test
+      return validation.valid;
+    } catch (error) {
+      console.warn('File upload test failed:', error);
+      return false;
+    }
+  }
 }
 
 // Export singleton instance
@@ -178,5 +267,8 @@ export const {
   saveResponse,
   getResponse,
   saveResponseWithFiles,
-  healthCheck
+  healthCheck,
+  checkCompanyExists,
+  validateFile,
+  testFileUpload
 } = apiService;
