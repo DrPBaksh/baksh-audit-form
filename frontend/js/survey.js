@@ -36,7 +36,7 @@ class SurveyManager {
     }
 
     /**
-     * Render survey with modern styling
+     * Render survey with modern styling and improved layout
      */
     renderSurvey() {
         const surveyForm = document.getElementById('survey-questions-form');
@@ -45,14 +45,14 @@ class SurveyManager {
         const progressTotal = document.getElementById('progress-total');
         const fileUploadSection = document.getElementById('file-upload-section');
         
-        // Set enhanced titles
+        // Set enhanced titles with better spacing
         if (this.currentSurvey.type === 'company') {
             surveyTitle.innerHTML = `<i class="fas fa-building text-primary-600 dark:text-primary-400 mr-3"></i>Company AI & Data Readiness Assessment`;
-            surveySubtitle.innerHTML = `<div class="flex items-center space-x-2"><i class="fas fa-id-card text-gray-500 dark:text-gray-400"></i><span>Company ID: <strong>${this.currentSurvey.companyId}</strong></span></div>`;
+            surveySubtitle.innerHTML = `<div class="flex items-center space-x-2 text-base"><i class="fas fa-id-card text-gray-500 dark:text-gray-400"></i><span>Company ID: <strong class="text-primary-600 dark:text-primary-400">${this.currentSurvey.companyId}</strong></span></div>`;
             fileUploadSection.classList.add('hidden');
         } else {
             surveyTitle.innerHTML = `<i class="fas fa-users text-accent-600 dark:text-accent-400 mr-3"></i>Individual AI & Data Readiness Assessment`;
-            surveySubtitle.innerHTML = `<div class="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-1 sm:space-y-0"><div class="flex items-center space-x-2"><i class="fas fa-building text-gray-500 dark:text-gray-400"></i><span>Company: <strong>${this.currentSurvey.companyId}</strong></span></div><div class="flex items-center space-x-2"><i class="fas fa-user text-gray-500 dark:text-gray-400"></i><span>Employee: <strong>${this.currentSurvey.employeeName || this.currentSurvey.employeeId}</strong></span></div></div>`;
+            surveySubtitle.innerHTML = `<div class="flex flex-col sm:flex-row sm:items-center sm:space-x-6 space-y-2 sm:space-y-0 text-base"><div class="flex items-center space-x-2"><i class="fas fa-building text-gray-500 dark:text-gray-400"></i><span>Company: <strong class="text-primary-600 dark:text-primary-400">${this.currentSurvey.companyId}</strong></span></div><div class="flex items-center space-x-2"><i class="fas fa-user text-gray-500 dark:text-gray-400"></i><span>Employee: <strong class="text-accent-600 dark:text-accent-400">${this.currentSurvey.employeeName || this.currentSurvey.employeeId}</strong></span></div></div>`;
             fileUploadSection.classList.remove('hidden');
         }
         
@@ -77,36 +77,38 @@ class SurveyManager {
         document.getElementById('survey-form').classList.remove('hidden');
         
         if (Object.keys(this.currentResponses).length > 0) {
-            this.showMessage('Loaded existing form responses!', 'success');
+            this.showMessage('✅ Loaded existing form responses!', 'success');
         }
     }
 
     createSection(sectionName, questions, index) {
         const sectionElement = document.createElement('div');
-        sectionElement.className = 'survey-section mb-8 sm:mb-12';
+        sectionElement.className = 'survey-section mb-10 sm:mb-12';
         
         if (sectionName && sectionName !== 'undefined') {
             const sectionHeader = document.createElement('div');
-            sectionHeader.className = 'section-header mb-6 sm:mb-8';
+            sectionHeader.className = 'section-header mb-8';
             
             const sectionIcon = this.getSectionIcon(sectionName);
             
             sectionHeader.innerHTML = `
-                <div class="flex items-center space-x-3 mb-3">
-                    <div class="w-8 h-8 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-lg flex items-center justify-center">
-                        <i class="${sectionIcon} text-white text-sm"></i>
+                <div class="flex items-center space-x-4 mb-4">
+                    <div class="w-10 h-10 bg-gradient-to-br from-primary-500 to-secondary-500 rounded-xl flex items-center justify-center shadow-lg">
+                        <i class="${sectionIcon} text-white text-lg"></i>
                     </div>
-                    <h3 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">${sectionName}</h3>
-                    <div class="flex-1 h-px bg-gradient-to-r from-gray-300 to-transparent dark:from-gray-600"></div>
+                    <div class="flex-1">
+                        <h3 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">${sectionName}</h3>
+                        <div class="h-1 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full mt-2"></div>
+                    </div>
                 </div>
-                <p class="text-sm text-gray-600 dark:text-gray-400 ml-11">${this.getSectionDescription(sectionName)}</p>
+                <p class="text-gray-600 dark:text-gray-400 ml-14 text-lg leading-relaxed">${this.getSectionDescription(sectionName)}</p>
             `;
             
             sectionElement.appendChild(sectionHeader);
         }
         
         const questionsContainer = document.createElement('div');
-        questionsContainer.className = 'questions-container space-y-6 sm:space-y-8';
+        questionsContainer.className = 'questions-container space-y-8 sm:space-y-10';
         
         questions.forEach((question, qIndex) => {
             const questionElement = this.renderQuestion(question, qIndex);
@@ -145,16 +147,16 @@ class SurveyManager {
 
     getSectionDescription(sectionName) {
         const descriptions = {
-            'Company Information': 'Basic information about your organization',
-            'Personal Information': 'Your role and background information',
-            'Digital Maturity': 'Current state of digital transformation',
-            'AI Strategy & Leadership': 'Strategic approach to AI adoption',
-            'Technology Familiarity': 'Your comfort level with technology',
-            'Current AI Usage': 'How you currently use AI tools',
-            'Data Governance & Quality': 'Data management and quality practices',
-            'Technology Infrastructure': 'Technical capabilities and platforms',
-            'Workforce Readiness': 'Employee skills and training',
-            'Risk Management': 'Risk assessment and mitigation strategies'
+            'Company Information': 'Basic information about your organization and current technology landscape',
+            'Personal Information': 'Your role, background, and experience with technology',
+            'Digital Maturity': 'Current state of digital transformation and technology adoption',
+            'AI Strategy & Leadership': 'Strategic approach to AI adoption and organizational leadership',
+            'Technology Familiarity': 'Your comfort level and experience with various technologies',
+            'Current AI Usage': 'How you currently use AI tools and technologies in your work',
+            'Data Governance & Quality': 'Data management practices, quality control, and governance frameworks',
+            'Technology Infrastructure': 'Technical capabilities, platforms, and infrastructure readiness',
+            'Workforce Readiness': 'Employee skills, training programs, and organizational capacity',
+            'Risk Management': 'Risk assessment strategies and mitigation approaches for AI adoption'
         };
         return descriptions[sectionName] || 'Please provide your responses for this section';
     }
@@ -170,22 +172,22 @@ class SurveyManager {
 
     renderQuestion(question, index = 0) {
         const questionDiv = document.createElement('div');
-        questionDiv.className = 'question-item bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-all duration-200 hover:shadow-md';
+        questionDiv.className = 'question-item bg-white dark:bg-gray-800 rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-8 transition-all duration-300 hover:shadow-lg hover:border-primary-300 dark:hover:border-primary-600';
         questionDiv.dataset.questionId = question.id;
         
         const questionHeader = document.createElement('div');
-        questionHeader.className = 'question-header mb-4 flex items-start space-x-3';
+        questionHeader.className = 'question-header mb-6 flex items-start space-x-4';
         
         const questionNumber = document.createElement('div');
-        questionNumber.className = 'inline-flex items-center justify-center w-6 h-6 bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-full text-sm font-semibold flex-shrink-0 mt-1';
+        questionNumber.className = 'inline-flex items-center justify-center w-8 h-8 bg-gradient-to-br from-primary-500 to-secondary-500 text-white rounded-xl text-sm font-bold flex-shrink-0 mt-1 shadow-md';
         questionNumber.textContent = index + 1;
         
         const questionText = document.createElement('div');
         questionText.className = 'flex-1';
         
         const label = document.createElement('label');
-        label.className = 'block text-base sm:text-lg font-semibold text-gray-900 dark:text-white leading-relaxed';
-        label.innerHTML = `${question.text}${question.required ? '<span class="text-red-500 ml-1 text-lg">*</span>' : ''}`;
+        label.className = 'block text-lg sm:text-xl font-semibold text-gray-900 dark:text-white leading-relaxed';
+        label.innerHTML = `${question.text}${question.required ? '<span class="text-red-500 ml-2 text-xl">*</span>' : ''}`;
         
         questionText.appendChild(label);
         questionHeader.appendChild(questionNumber);
@@ -193,15 +195,15 @@ class SurveyManager {
         questionDiv.appendChild(questionHeader);
         
         const inputContainer = document.createElement('div');
-        inputContainer.className = 'question-input mt-4';
+        inputContainer.className = 'question-input mt-6';
         const inputElement = this.createQuestionInput(question);
         inputContainer.appendChild(inputElement);
         questionDiv.appendChild(inputContainer);
         
         const errorDiv = document.createElement('div');
-        errorDiv.className = 'error-message hidden mt-3 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg text-red-700 dark:text-red-300 text-sm flex items-center';
+        errorDiv.className = 'error-message hidden mt-4 p-4 bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 rounded-r-lg text-red-700 dark:text-red-300 text-sm flex items-center';
         errorDiv.id = `error-${question.id}`;
-        errorDiv.innerHTML = '<i class="fas fa-exclamation-circle mr-2"></i><span></span>';
+        errorDiv.innerHTML = '<i class="fas fa-exclamation-circle mr-3 text-lg"></i><span></span>';
         questionDiv.appendChild(errorDiv);
         
         return questionDiv;
@@ -223,7 +225,7 @@ class SurveyManager {
         input.type = 'text';
         input.id = `question-${question.id}`;
         input.name = question.id;
-        input.className = 'form-input w-full';
+        input.className = 'form-input w-full px-4 py-4 text-lg';
         input.placeholder = 'Enter your response...';
         
         if (question.required) input.required = true;
@@ -239,9 +241,9 @@ class SurveyManager {
         const textarea = document.createElement('textarea');
         textarea.id = `question-${question.id}`;
         textarea.name = question.id;
-        textarea.className = 'form-input w-full';
+        textarea.className = 'form-input w-full px-4 py-4 text-lg resize-y';
         textarea.placeholder = 'Enter your detailed response...';
-        textarea.rows = 4;
+        textarea.rows = 5;
         
         if (question.required) textarea.required = true;
         if (this.currentResponses[question.id]) textarea.value = this.currentResponses[question.id];
@@ -254,11 +256,11 @@ class SurveyManager {
 
     createRadioInput(question) {
         const container = document.createElement('div');
-        container.className = 'space-y-3';
+        container.className = 'space-y-4';
         
         question.options.forEach((option, index) => {
             const radioContainer = document.createElement('label');
-            radioContainer.className = 'radio-option group flex items-start p-4 border border-gray-200 dark:border-gray-600 rounded-lg cursor-pointer transition-all duration-200 hover:border-primary-300 dark:hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20';
+            radioContainer.className = 'radio-option group flex items-start p-5 border-2 border-gray-200 dark:border-gray-600 rounded-xl cursor-pointer transition-all duration-200 hover:border-primary-400 dark:hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:shadow-md';
             
             const input = document.createElement('input');
             input.type = 'radio';
@@ -271,24 +273,24 @@ class SurveyManager {
             
             if (this.currentResponses[question.id] === option) {
                 input.checked = true;
-                radioContainer.classList.add('border-primary-500', 'bg-primary-50', 'dark:bg-primary-900/20');
+                radioContainer.classList.add('border-primary-500', 'bg-primary-50', 'dark:bg-primary-900/20', 'shadow-md');
             }
             
             input.addEventListener('change', () => {
                 container.querySelectorAll('.radio-option').forEach(opt => {
-                    opt.classList.remove('border-primary-500', 'bg-primary-50', 'dark:bg-primary-900/20');
+                    opt.classList.remove('border-primary-500', 'bg-primary-50', 'dark:bg-primary-900/20', 'shadow-md');
                 });
                 if (input.checked) {
-                    radioContainer.classList.add('border-primary-500', 'bg-primary-50', 'dark:bg-primary-900/20');
+                    radioContainer.classList.add('border-primary-500', 'bg-primary-50', 'dark:bg-primary-900/20', 'shadow-md');
                 }
                 this.updateProgress();
             });
             
             const radioVisual = document.createElement('div');
-            radioVisual.className = 'flex-shrink-0 w-5 h-5 border-2 border-gray-300 dark:border-gray-600 rounded-full mr-3 flex items-center justify-center group-hover:border-primary-400 transition-colors';
+            radioVisual.className = 'flex-shrink-0 w-6 h-6 border-2 border-gray-300 dark:border-gray-600 rounded-full mr-4 flex items-center justify-center group-hover:border-primary-400 transition-colors';
             
             const radioInner = document.createElement('div');
-            radioInner.className = 'w-2.5 h-2.5 bg-primary-600 rounded-full hidden';
+            radioInner.className = 'w-3 h-3 bg-primary-600 rounded-full hidden';
             radioVisual.appendChild(radioInner);
             
             if (input.checked) {
@@ -310,7 +312,7 @@ class SurveyManager {
             });
             
             const text = document.createElement('span');
-            text.className = 'text-gray-700 dark:text-gray-300 leading-relaxed';
+            text.className = 'text-gray-700 dark:text-gray-300 leading-relaxed text-lg';
             text.textContent = option;
             
             radioContainer.appendChild(input);
@@ -324,11 +326,11 @@ class SurveyManager {
 
     createCheckboxInput(question) {
         const container = document.createElement('div');
-        container.className = 'space-y-3';
+        container.className = 'space-y-4';
         
         question.options.forEach((option, index) => {
             const checkboxContainer = document.createElement('label');
-            checkboxContainer.className = 'checkbox-option group flex items-start p-4 border border-gray-200 dark:border-gray-600 rounded-lg cursor-pointer transition-all duration-200 hover:border-primary-300 dark:hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20';
+            checkboxContainer.className = 'checkbox-option group flex items-start p-5 border-2 border-gray-200 dark:border-gray-600 rounded-xl cursor-pointer transition-all duration-200 hover:border-primary-400 dark:hover:border-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:shadow-md';
             
             const input = document.createElement('input');
             input.type = 'checkbox';
@@ -340,23 +342,23 @@ class SurveyManager {
             const existingValues = this.currentResponses[question.id];
             if (Array.isArray(existingValues) && existingValues.includes(option)) {
                 input.checked = true;
-                checkboxContainer.classList.add('border-primary-500', 'bg-primary-50', 'dark:bg-primary-900/20');
+                checkboxContainer.classList.add('border-primary-500', 'bg-primary-50', 'dark:bg-primary-900/20', 'shadow-md');
             }
             
             input.addEventListener('change', () => {
                 if (input.checked) {
-                    checkboxContainer.classList.add('border-primary-500', 'bg-primary-50', 'dark:bg-primary-900/20');
+                    checkboxContainer.classList.add('border-primary-500', 'bg-primary-50', 'dark:bg-primary-900/20', 'shadow-md');
                 } else {
-                    checkboxContainer.classList.remove('border-primary-500', 'bg-primary-50', 'dark:bg-primary-900/20');
+                    checkboxContainer.classList.remove('border-primary-500', 'bg-primary-50', 'dark:bg-primary-900/20', 'shadow-md');
                 }
                 this.updateProgress();
             });
             
             const checkboxVisual = document.createElement('div');
-            checkboxVisual.className = 'flex-shrink-0 w-5 h-5 border-2 border-gray-300 dark:border-gray-600 rounded mr-3 flex items-center justify-center group-hover:border-primary-400 transition-colors';
+            checkboxVisual.className = 'flex-shrink-0 w-6 h-6 border-2 border-gray-300 dark:border-gray-600 rounded-md mr-4 flex items-center justify-center group-hover:border-primary-400 transition-colors';
             
             const checkmark = document.createElement('i');
-            checkmark.className = 'fas fa-check text-white text-xs hidden';
+            checkmark.className = 'fas fa-check text-white text-sm hidden';
             checkboxVisual.appendChild(checkmark);
             
             if (input.checked) {
@@ -375,7 +377,7 @@ class SurveyManager {
             });
             
             const text = document.createElement('span');
-            text.className = 'text-gray-700 dark:text-gray-300 leading-relaxed';
+            text.className = 'text-gray-700 dark:text-gray-300 leading-relaxed text-lg';
             text.textContent = option;
             
             checkboxContainer.appendChild(input);
@@ -391,7 +393,7 @@ class SurveyManager {
         const select = document.createElement('select');
         select.id = `question-${question.id}`;
         select.name = question.id;
-        select.className = 'form-input w-full';
+        select.className = 'form-input w-full px-4 py-4 text-lg';
         
         if (question.required) select.required = true;
         
@@ -417,7 +419,7 @@ class SurveyManager {
     }
 
     /**
-     * Setup file upload functionality
+     * Setup enhanced file upload functionality with better UX
      */
     setupFileUpload() {
         const fileInput = document.getElementById('file-input');
@@ -425,49 +427,122 @@ class SurveyManager {
         
         if (!fileInput || !fileList) return;
         
+        // Clear any existing files
+        this.uploadedFiles = [];
+        fileList.innerHTML = '';
+        
         fileInput.addEventListener('change', (event) => {
             const files = Array.from(event.target.files);
             
+            if (files.length === 0) return;
+            
+            console.log(`📁 Processing ${files.length} selected files`);
+            
+            let processedCount = 0;
+            let errorCount = 0;
+            
             files.forEach(file => {
-                // Check file size (max 10MB)
-                if (file.size > 10 * 1024 * 1024) {
-                    this.showMessage(`File "${file.name}" is too large. Maximum size is 10MB.`, 'error');
+                // Validate file
+                const validation = window.bakshAPI.validateFile(file);
+                if (!validation.valid) {
+                    this.showMessage(`❌ ${file.name}: ${validation.errors.join(', ')}`, 'error');
+                    errorCount++;
                     return;
                 }
                 
                 // Check if file already exists
-                if (this.uploadedFiles.some(f => f.name === file.name)) {
-                    this.showMessage(`File "${file.name}" is already uploaded.`, 'warning');
+                if (this.uploadedFiles.some(f => f.name === file.name && f.size === file.size)) {
+                    this.showMessage(`⚠️ File "${file.name}" is already uploaded.`, 'warning');
+                    errorCount++;
                     return;
                 }
                 
+                // Add file to uploaded files
                 this.uploadedFiles.push(file);
                 this.addFileToList(file);
+                processedCount++;
             });
             
-            // Clear the input
+            // Clear the input so same files can be selected again if needed
             fileInput.value = '';
+            
+            // Show summary message
+            if (processedCount > 0) {
+                this.showMessage(`✅ Successfully added ${processedCount} file(s) for upload.`, 'success');
+            }
+            
+            if (errorCount > 0) {
+                this.showMessage(`⚠️ ${errorCount} file(s) could not be added due to validation errors.`, 'warning');
+            }
+            
+            console.log(`📊 File upload status: ${processedCount} added, ${errorCount} rejected. Total files: ${this.uploadedFiles.length}`);
         });
+        
+        // Add drag and drop functionality
+        this.setupDragAndDrop(fileInput);
     }
 
     /**
-     * Add file to the display list
+     * Setup drag and drop for file uploads
+     */
+    setupDragAndDrop(fileInput) {
+        const uploadSection = document.getElementById('file-upload-section');
+        if (!uploadSection) return;
+        
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadSection.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadSection.addEventListener(eventName, () => {
+                uploadSection.classList.add('border-primary-500', 'bg-primary-50', 'dark:bg-primary-900/20');
+            }, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadSection.addEventListener(eventName, () => {
+                uploadSection.classList.remove('border-primary-500', 'bg-primary-50', 'dark:bg-primary-900/20');
+            }, false);
+        });
+        
+        uploadSection.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            // Trigger the same logic as file input change
+            const event = new Event('change');
+            Object.defineProperty(event, 'target', {
+                value: { files },
+                enumerable: true
+            });
+            
+            fileInput.dispatchEvent(event);
+        }, false);
+    }
+
+    /**
+     * Add file to the display list with enhanced UI
      */
     addFileToList(file) {
         const fileList = document.getElementById('file-list');
         const fileItem = document.createElement('div');
-        fileItem.className = 'flex items-center justify-between p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg';
+        fileItem.className = 'flex items-center justify-between p-4 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-600 rounded-xl shadow-sm hover:shadow-md transition-all duration-200';
         
         const fileInfo = document.createElement('div');
-        fileInfo.className = 'flex items-center space-x-3';
+        fileInfo.className = 'flex items-center space-x-4';
         
         const fileIcon = document.createElement('i');
-        fileIcon.className = `fas ${this.getFileIcon(file.name)} text-primary-600 dark:text-primary-400`;
+        fileIcon.className = `fas ${this.getFileIcon(file.name)} text-2xl text-primary-600 dark:text-primary-400`;
         
         const fileDetails = document.createElement('div');
         fileDetails.innerHTML = `
-            <div class="font-medium text-gray-900 dark:text-white">${file.name}</div>
-            <div class="text-sm text-gray-500 dark:text-gray-400">${this.formatFileSize(file.size)}</div>
+            <div class="font-semibold text-gray-900 dark:text-white text-lg">${file.name}</div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">${this.formatFileSize(file.size)} • ${file.type || 'Unknown type'}</div>
         `;
         
         fileInfo.appendChild(fileIcon);
@@ -475,23 +550,37 @@ class SurveyManager {
         
         const removeButton = document.createElement('button');
         removeButton.type = 'button';
-        removeButton.className = 'text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 transition-colors';
-        removeButton.innerHTML = '<i class="fas fa-times"></i>';
+        removeButton.className = 'flex items-center justify-center w-10 h-10 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-all duration-200';
+        removeButton.innerHTML = '<i class="fas fa-times text-lg"></i>';
+        removeButton.title = 'Remove file';
         removeButton.addEventListener('click', () => {
-            this.removeFile(file.name);
+            this.removeFile(file.name, file.size);
             fileItem.remove();
+            this.showMessage(`🗑️ Removed "${file.name}" from upload list.`, 'info');
         });
         
         fileItem.appendChild(fileInfo);
         fileItem.appendChild(removeButton);
         fileList.appendChild(fileItem);
+        
+        // Add animation
+        fileItem.style.opacity = '0';
+        fileItem.style.transform = 'translateY(10px)';
+        setTimeout(() => {
+            fileItem.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            fileItem.style.opacity = '1';
+            fileItem.style.transform = 'translateY(0)';
+        }, 10);
     }
 
     /**
      * Remove file from uploaded files
      */
-    removeFile(fileName) {
-        this.uploadedFiles = this.uploadedFiles.filter(file => file.name !== fileName);
+    removeFile(fileName, fileSize) {
+        this.uploadedFiles = this.uploadedFiles.filter(file => 
+            !(file.name === fileName && file.size === fileSize)
+        );
+        console.log(`🗑️ Removed file: ${fileName}. Remaining files: ${this.uploadedFiles.length}`);
     }
 
     /**
@@ -535,12 +624,12 @@ class SurveyManager {
                 this.currentSurvey.employeeId
             );
             
-            if (existing && existing.responses) {
-                this.currentResponses = existing.responses;
-                console.log('Loaded existing responses:', Object.keys(this.currentResponses).length);
+            if (existing && existing.data && existing.data.responses) {
+                this.currentResponses = existing.data.responses;
+                console.log('📋 Loaded existing responses:', Object.keys(this.currentResponses).length);
             }
         } catch (error) {
-            console.log('No existing responses found:', error.message);
+            console.log('ℹ️ No existing responses found:', error.message);
         }
     }
 
@@ -562,6 +651,16 @@ class SurveyManager {
         if (progressBar) {
             const percentage = (answeredQuestions / totalQuestions) * 100;
             progressBar.style.width = `${percentage}%`;
+            
+            // Add color coding for progress
+            progressBar.classList.remove('bg-red-500', 'bg-yellow-500', 'bg-green-500');
+            if (percentage < 30) {
+                progressBar.classList.add('bg-red-500');
+            } else if (percentage < 70) {
+                progressBar.classList.add('bg-yellow-500');
+            } else {
+                progressBar.classList.add('bg-green-500');
+            }
         }
     }
 
@@ -595,7 +694,7 @@ class SurveyManager {
     }
 
     /**
-     * Validate form responses
+     * Validate form responses with enhanced error messages
      */
     validateResponses(responses) {
         this.validationErrors = [];
@@ -615,7 +714,7 @@ class SurveyManager {
     }
 
     /**
-     * Display validation errors
+     * Display validation errors with improved UX
      */
     showValidationErrors() {
         // Clear previous errors
@@ -629,7 +728,7 @@ class SurveyManager {
                 errorElement.classList.remove('hidden');
                 errorElement.querySelector('span').textContent = error.message;
                 
-                // Scroll to first error
+                // Scroll to first error with better positioning
                 if (error === this.validationErrors[0]) {
                     const questionElement = document.querySelector(`[data-question-id="${error.questionId}"]`);
                     if (questionElement) {
@@ -637,16 +736,19 @@ class SurveyManager {
                             behavior: 'smooth', 
                             block: 'center' 
                         });
+                        
+                        // Add attention animation
+                        questionElement.style.animation = 'pulse 1s ease-in-out 3';
                     }
                 }
             }
         });
         
-        // Show summary message
+        // Show summary message with better formatting
         const errorCount = this.validationErrors.length;
         const message = errorCount === 1 
-            ? 'Please complete the required field.'
-            : `Please complete ${errorCount} required fields.`;
+            ? '❌ Please complete the required field above.'
+            : `❌ Please complete ${errorCount} required fields above.`;
         
         this.showMessage(message, 'error');
     }
@@ -659,7 +761,7 @@ class SurveyManager {
             const responses = this.collectResponses();
             
             if (Object.keys(responses).length === 0) {
-                this.showMessage('No responses to save.', 'warning');
+                this.showMessage('ℹ️ No responses to save yet.', 'info');
                 return;
             }
             
@@ -676,13 +778,14 @@ class SurveyManager {
                 this.currentSurvey.employeeName
             );
             
-            this.showMessage('Progress saved successfully!', 'success');
+            this.showMessage('💾 Progress saved successfully!', 'success');
             
             button.innerHTML = originalText;
             button.disabled = false;
             
         } catch (error) {
-            this.showMessage(`Failed to save progress: ${window.bakshAPI.getErrorMessage(error)}`, 'error');
+            console.error('❌ Save draft failed:', error);
+            this.showMessage(`❌ Failed to save progress: ${window.bakshAPI.getErrorMessage(error)}`, 'error');
             
             const button = document.getElementById('save-draft-button');
             button.innerHTML = '<i class="fas fa-save mr-2"></i>Save Progress';
@@ -691,10 +794,12 @@ class SurveyManager {
     }
 
     /**
-     * Submit the survey
+     * Submit the survey with enhanced file upload handling
      */
     async submitSurvey() {
         try {
+            console.log('🚀 Starting survey submission...');
+            
             const responses = this.collectResponses();
             
             // Validate responses
@@ -707,6 +812,11 @@ class SurveyManager {
             const originalText = button.innerHTML;
             button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Submitting...';
             button.disabled = true;
+            
+            // Show file upload status if files are present
+            if (this.uploadedFiles.length > 0) {
+                this.showMessage(`📎 Uploading ${this.uploadedFiles.length} file(s) with your responses...`, 'info');
+            }
             
             // Prepare form data
             const formData = {
@@ -722,14 +832,31 @@ class SurveyManager {
                 formData.employeeName = this.currentSurvey.employeeName;
             }
             
-            // Submit the survey
-            await window.bakshAPI.submitSurvey(formData, this.uploadedFiles);
+            console.log('📋 Form data prepared:', {
+                type: formData.type,
+                responseCount: Object.keys(responses).length,
+                fileCount: this.uploadedFiles.length
+            });
+            
+            // Submit the survey with files
+            const result = await window.bakshAPI.submitSurvey(formData, this.uploadedFiles);
+            
+            console.log('✅ Survey submission successful:', result);
+            
+            // Show success message with file confirmation
+            if (this.uploadedFiles.length > 0) {
+                const uploadedCount = result.uploaded_files || this.uploadedFiles.length;
+                this.showMessage(`🎉 Survey submitted successfully with ${uploadedCount} file(s) uploaded!`, 'success');
+            } else {
+                this.showMessage('🎉 Survey submitted successfully!', 'success');
+            }
             
             // Show success screen
             this.showSuccessScreen();
             
         } catch (error) {
-            this.showMessage(`Failed to submit survey: ${window.bakshAPI.getErrorMessage(error)}`, 'error');
+            console.error('❌ Survey submission failed:', error);
+            this.showMessage(`❌ Failed to submit survey: ${window.bakshAPI.getErrorMessage(error)}`, 'error');
             
             const button = document.getElementById('submit-button');
             button.innerHTML = '<i class="fas fa-paper-plane mr-2"></i>Submit Survey';
@@ -738,7 +865,7 @@ class SurveyManager {
     }
 
     /**
-     * Show success screen
+     * Show success screen with enhanced feedback
      */
     showSuccessScreen() {
         // Hide survey screen and show success screen
@@ -748,12 +875,21 @@ class SurveyManager {
         // Scroll to top
         window.scrollTo({ top: 0, behavior: 'smooth' });
         
+        // Update success screen with specific details
+        const successScreen = document.getElementById('success-screen');
+        const existingMessage = successScreen.querySelector('p');
+        if (existingMessage && this.uploadedFiles.length > 0) {
+            existingMessage.innerHTML = `Thank you for completing the AI & Data Readiness Assessment.<br><strong>${this.uploadedFiles.length} file(s) were successfully uploaded</strong> with your responses.`;
+        }
+        
         // Clear form data
         this.currentSurvey = null;
         this.surveyData = null;
         this.currentResponses = {};
         this.uploadedFiles = [];
         this.validationErrors = [];
+        
+        console.log('🎊 Survey completed and data cleared');
     }
 
     /**
@@ -787,6 +923,7 @@ class SurveyManager {
             window.showMessage(message, type);
         } else {
             // Fallback alert if global message system not available
+            console.log(`${type.toUpperCase()}: ${message}`);
             alert(message);
         }
     }
@@ -892,10 +1029,10 @@ class SurveyManager {
             if (data.responses) {
                 this.currentResponses = data.responses;
                 this.renderSurvey(); // Re-render to show imported responses
-                this.showMessage('Responses imported successfully!', 'success');
+                this.showMessage('📥 Responses imported successfully!', 'success');
             }
         } catch (error) {
-            this.showMessage('Failed to import responses: Invalid JSON format', 'error');
+            this.showMessage('❌ Failed to import responses: Invalid JSON format', 'error');
         }
     }
 
@@ -903,7 +1040,7 @@ class SurveyManager {
      * Reset survey (clear all responses)
      */
     resetSurvey() {
-        if (confirm('Are you sure you want to clear all responses? This action cannot be undone.')) {
+        if (confirm('⚠️ Are you sure you want to clear all responses? This action cannot be undone.')) {
             this.currentResponses = {};
             this.uploadedFiles = [];
             this.validationErrors = [];
@@ -915,7 +1052,7 @@ class SurveyManager {
                 
                 // Clear custom styled elements
                 form.querySelectorAll('.radio-option, .checkbox-option').forEach(option => {
-                    option.classList.remove('border-primary-500', 'bg-primary-50', 'dark:bg-primary-900/20');
+                    option.classList.remove('border-primary-500', 'bg-primary-50', 'dark:bg-primary-900/20', 'shadow-md');
                 });
                 
                 form.querySelectorAll('.error-message').forEach(error => {
@@ -930,7 +1067,7 @@ class SurveyManager {
             }
             
             this.updateProgress();
-            this.showMessage('Survey reset successfully!', 'success');
+            this.showMessage('🔄 Survey reset successfully!', 'success');
         }
     }
 
@@ -1017,7 +1154,7 @@ class SurveyManager {
 // Initialize the survey manager when the page loads
 document.addEventListener('DOMContentLoaded', () => {
     window.surveyManager = new SurveyManager();
-    console.log('✅ Survey Manager initialized');
+    console.log('✅ Survey Manager initialized with enhanced features');
 });
 
 // Export for use in other modules

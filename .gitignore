@@ -36,9 +36,10 @@ ENV/
 env/
 
 backend/lambda/shared/python/botocore/data/
-
+frontend/package.json
 backend/lambda/shared/python/
-
+frontend/node_modules/*
+frontend/package-lock.json
 # IDE
 .vscode/
 .idea/
