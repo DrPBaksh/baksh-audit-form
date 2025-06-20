@@ -12,7 +12,10 @@ import {
   DocumentArrowDownIcon,
   BuildingOfficeIcon,
   UserIcon,
-  BugAntIcon
+  BugAntIcon,
+  ListBulletIcon,
+  ClockIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
 
 import QuestionRenderer from './QuestionRenderer';
@@ -45,8 +48,13 @@ const SurveyForm = ({
   const [companyStatus, setCompanyStatus] = useState(''); // 'unknown', 'existing', 'new'
   const [checkingCompany, setCheckingCompany] = useState(false);
   
+  // Available audits for reload
+  const [availableAudits, setAvailableAudits] = useState([]);
+  const [showAuditsList, setShowAuditsList] = useState(false);
+  const [loadingAudits, setLoadingAudits] = useState(false);
+  
   // Progress tracking
-  const questionsPerPage = 3; // Reduced for better space utilization
+  const questionsPerPage = 3; // Reduced for better space utilisation
   const totalPages = Math.ceil(questions.length / questionsPerPage);
   const currentQuestions = questions.slice(
     currentPage * questionsPerPage,
@@ -67,7 +75,7 @@ const SurveyForm = ({
     }, 30000); // Auto-save every 30 seconds
 
     return () => clearInterval(autoSaveInterval);
-  }, [responses, companyId, employeeId, surveyType, files]); // Added files to dependency
+  }, [responses, companyId, employeeId, surveyType, files]);
 
   // Check company status when company ID changes
   useEffect(() => {
@@ -103,7 +111,7 @@ const SurveyForm = ({
       
       if (existingResponse) {
         setCompanyStatus('existing');
-        toast.success('Company recognized! You can load previous responses if needed.', { duration: 5000 });
+        toast.success('Company recognised! You can load previous responses if needed.', { duration: 5000 });
       } else {
         setCompanyStatus('new');
         toast.info('New company detected. Starting fresh assessment.', { duration: 4000 });
@@ -113,6 +121,69 @@ const SurveyForm = ({
       toast.info('New company detected. Starting fresh assessment.', { duration: 4000 });
     } finally {
       setCheckingCompany(false);
+    }
+  };
+
+  const loadAvailableAudits = async () => {
+    try {
+      setLoadingAudits(true);
+      let audits = [];
+      
+      if (surveyType === 'company') {
+        const result = await apiService.listCompanyAudits();
+        audits = result.companies || [];
+      } else if (surveyType === 'employee') {
+        if (!companyId.trim()) {
+          toast.error('Please enter a Company ID first to load employee audits');
+          setLoadingAudits(false);
+          return;
+        }
+        const result = await apiService.listEmployeeAudits(companyId.trim());
+        audits = result.employees || [];
+      }
+      
+      setAvailableAudits(audits);
+      setShowAuditsList(true);
+      
+      if (audits.length === 0) {
+        toast.info(`No existing ${surveyType} audits found to reload.`);
+      } else {
+        toast.success(`Found ${audits.length} ${surveyType} audit${audits.length > 1 ? 's' : ''} available for reload.`);
+      }
+    } catch (error) {
+      console.error('Error loading available audits:', error);
+      toast.error('Failed to load available audits');
+      setAvailableAudits([]);
+    } finally {
+      setLoadingAudits(false);
+    }
+  };
+
+  const loadSpecificAudit = async (auditId, auditEmployeeId = null) => {
+    try {
+      setLoading(true);
+      const existingResponse = await apiService.getResponse(
+        surveyType, 
+        auditId, 
+        auditEmployeeId
+      );
+      
+      if (existingResponse && existingResponse.responses) {
+        setResponses(existingResponse.responses);
+        setCompanyId(auditId);
+        if (auditEmployeeId) {
+          setEmployeeId(auditEmployeeId);
+        }
+        setShowAuditsList(false);
+        toast.success('Previous responses loaded successfully!');
+      } else {
+        toast.error('Failed to load audit responses.');
+      }
+    } catch (error) {
+      console.error('Error loading specific audit:', error);
+      toast.error('Failed to load audit responses');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -434,6 +505,70 @@ const SurveyForm = ({
         </div>
       </div>
 
+      {/* Available Audits Modal */}
+      {showAuditsList && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+        >
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-96 overflow-y-auto"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-slate-900 flex items-center space-x-2">
+                <ListBulletIcon className="w-5 h-5" />
+                <span>Available {surveyType === 'company' ? 'Company' : 'Employee'} Audits</span>
+              </h3>
+              <button
+                onClick={() => setShowAuditsList(false)}
+                className="p-1 hover:bg-slate-100 rounded"
+              >
+                <XMarkIcon className="w-5 h-5" />
+              </button>
+            </div>
+            
+            {availableAudits.length === 0 ? (
+              <p className="text-slate-600 text-center py-8">
+                No {surveyType} audits found to reload.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {availableAudits.map((audit, index) => (
+                  <button
+                    key={index}
+                    onClick={() => loadSpecificAudit(
+                      surveyType === 'company' ? audit.company_id : audit.company_id,
+                      surveyType === 'employee' ? audit.employee_id : null
+                    )}
+                    className="w-full text-left p-3 border border-slate-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-medium text-slate-900">
+                          {surveyType === 'company' ? audit.company_id : `${audit.company_id} / ${audit.employee_id}`}
+                        </div>
+                        {audit.last_updated && (
+                          <div className="text-sm text-slate-500 flex items-center space-x-1">
+                            <ClockIcon className="w-3 h-3" />
+                            <span>Last updated: {new Date(audit.last_updated).toLocaleDateString('en-GB')}</span>
+                          </div>
+                        )}
+                      </div>
+                      <DocumentArrowDownIcon className="w-4 h-4 text-blue-600" />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        </motion.div>
+      )}
+
       <div className="grid lg:grid-cols-4 gap-6">
         {/* Progress Sidebar */}
         <div className="lg:col-span-1 space-y-4">
@@ -471,14 +606,38 @@ const SurveyForm = ({
               )}
             </button>
 
+            <button
+              onClick={loadAvailableAudits}
+              disabled={loadingAudits || (surveyType === 'employee' && !companyId.trim())}
+              className={`
+                w-full flex items-center justify-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors
+                ${loadingAudits || (surveyType === 'employee' && !companyId.trim())
+                  ? 'bg-green-100 text-green-400 cursor-not-allowed'
+                  : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-200'
+                }
+              `}
+            >
+              {loadingAudits ? (
+                <>
+                  <div className="animate-spin rounded-full h-3 w-3 border-b border-green-600"></div>
+                  <span>Loading...</span>
+                </>
+              ) : (
+                <>
+                  <ListBulletIcon className="w-4 h-4" />
+                  <span>List Available</span>
+                </>
+              )}
+            </button>
+
             {companyStatus === 'existing' && (
               <button
                 onClick={loadExistingResponse}
                 disabled={loading}
-                className="w-full flex items-center justify-center space-x-2 px-3 py-2 bg-green-50 text-green-700 rounded-md text-sm font-medium hover:bg-green-100 border border-green-200 transition-colors"
+                className="w-full flex items-center justify-center space-x-2 px-3 py-2 bg-yellow-50 text-yellow-700 rounded-md text-sm font-medium hover:bg-yellow-100 border border-yellow-200 transition-colors"
               >
                 <DocumentArrowDownIcon className="w-4 h-4" />
-                <span>Load Previous</span>
+                <span>Load Current</span>
               </button>
             )}
 
@@ -552,7 +711,7 @@ const SurveyForm = ({
                     <CheckCircleIcon className="w-3 h-3" />
                     <span>
                       {companyStatus === 'existing' 
-                        ? 'Company recognized in system' 
+                        ? 'Company recognised in system' 
                         : 'New company - will create fresh assessment'
                       }
                     </span>
