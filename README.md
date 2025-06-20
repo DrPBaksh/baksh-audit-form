@@ -1,6 +1,6 @@
 # 🏢 Baksh Audit Form - AI & Data Readiness Survey
 
-A professional survey platform designed to assess company and employee AI & data readiness for DMGT. Built with AWS CDK, Lambda functions, and a modern React frontend.
+A professional survey platform designed to assess company and employee AI & data readiness for DMGT. Built with AWS CDK, Lambda functions, and a modern React frontend with enhanced save/reload capabilities.
 
 ## 🚀 Quick Start
 
@@ -10,7 +10,7 @@ A professional survey platform designed to assess company and employee AI & data
 - Node.js 16+ (for CDK and React)
 - Docker (for Lambda layers)
 
-### Deploy Backend
+### Deploy Backend (Backend Resources Only)
 ```bash
 git clone https://github.com/DrPBaksh/baksh-audit-form.git
 cd baksh-audit-form
@@ -18,7 +18,7 @@ chmod +x backend/deploy.sh
 ./backend/deploy.sh --owner=your-name
 ```
 
-### Deploy React Frontend
+### Deploy React Frontend (Separately)
 ```bash
 # Setup React development environment
 cd react-frontend
@@ -44,22 +44,24 @@ python3 diagnose_api.py https://your-api-url.com/dev
 ./backend/destroy.sh --owner=your-name
 ```
 
-## 📋 Features
+## 📋 Enhanced Features
 
 - 📊 **Dual Survey System** - Company-level and employee-level assessments
-- 💾 **Progressive Saving** - Resume partially completed forms
-- 📁 **File Uploads** - Employee document attachments
+- 💾 **Enhanced Save/Reload Logic** - List available audits and load specific responses
+- 📋 **Smart Audit Listing** - Browse existing company and employee audits before reloading
+- 📁 **File Uploads** - Employee document attachments with validation
 - 📱 **Mobile Responsive** - Works seamlessly on all devices
 - 🔒 **Secure** - AWS-native security with IAM least privilege
 - ⚡ **Serverless** - Cost-effective, auto-scaling architecture
 - 🧪 **Automated Testing** - Comprehensive API validation suite
 - ⚛️ **Modern React Frontend** - Professional UI with smooth animations
+- 🇬🇧 **British English** - Consistent British spelling and formatting throughout
 
 ## 🏗️ Architecture
 
-### Frontend Options
-- **React Frontend** (Recommended): Modern React application with enhanced UX
-- **Original Frontend**: Vanilla JavaScript (legacy, still functional)
+### Frontend
+- **React Frontend**: Modern React application with enhanced UX and improved save/reload logic
+- **Logo Support**: Place `logo.png` in `react-frontend/public/` directory
 
 ### Backend
 - **API**: AWS Lambda functions with API Gateway
@@ -70,7 +72,7 @@ python3 diagnose_api.py https://your-api-url.com/dev
 ## 📝 Survey Structure
 
 ### Company Assessment
-Evaluates organizational AI and data maturity:
+Evaluates organisational AI and data maturity:
 - AI Strategy & Leadership
 - Data Governance & Quality
 - Technology Infrastructure
@@ -84,6 +86,32 @@ Assesses individual AI familiarity and needs:
 - Training Needs
 - Workflow Automation Opportunities
 - Concerns & Barriers
+
+## 🔄 Enhanced Save/Reload Logic
+
+### New Capabilities:
+1. **List Available Audits** - Browse all existing company or employee audits
+2. **Smart Company Recognition** - Automatic detection when entering existing company IDs
+3. **Three Reload Options**:
+   - "List Available" - Browse all audits in modal interface
+   - "Load Current" - Load audit for current company/employee IDs
+   - Individual audit selection from the list
+
+### Save Options:
+- **Auto-save** - Every 30 seconds in background
+- **Manual Save** - Save current progress with visual feedback
+- **File Integration** - Files are included in save operations for employee surveys
+
+## 📋 CSV Questions Configuration
+
+**Questions automatically update when CSV files are modified.**
+
+### To Update Questions:
+1. Edit CSV files in `/data/` directory
+2. Redeploy backend: `./backend/deploy.sh --owner=your-name`
+3. Questions are served from S3 and update immediately
+
+See [CSV_QUESTIONS.md](CSV_QUESTIONS.md) for detailed CSV format and configuration.
 
 ## 🗂️ Data Storage
 
@@ -104,13 +132,15 @@ S3 Bucket Structure:
 
 ## ⚛️ React Frontend
 
-### Features
+### Enhanced Features
 - **Modern UI**: Professional design with Tailwind CSS
 - **Smooth Animations**: Framer Motion for enhanced UX
 - **Progressive Forms**: Multi-page navigation with validation
-- **File Upload**: Drag-and-drop with progress indicators
-- **Auto-save**: Automatic progress saving every 30 seconds
+- **Enhanced File Upload**: Drag-and-drop with progress indicators
+- **Smart Auto-save**: Automatic progress saving every 30 seconds
+- **Audit Listing Modal**: Browse and select from available audits
 - **Responsive Design**: Mobile-first approach
+- **Logo Integration**: Automatic logo display from `/public/logo.png`
 
 ### Development
 ```bash
@@ -129,11 +159,8 @@ npm run build
 ./deploy.sh --owner=your-name
 ```
 
-### Configuration
-The React frontend automatically detects API endpoints from backend deployment:
-- Reads from `backend/cdk/api-outputs.json`
-- Configures endpoints: `/questions` and `/responses`
-- Sets up CloudFront distribution for global delivery
+### Logo Setup
+Simply place your `logo.png` file in the `react-frontend/public/` directory. The homepage will automatically display it in the top-left area.
 
 ## 🧪 Testing & Validation
 
@@ -159,48 +186,35 @@ python3 test_api.py --api-url https://your-api-url.com/dev
 
 **Expected Results:** 7/10 tests pass (3 expected failures for error validation)
 
-See [API_TESTING.md](API_TESTING.md) for detailed testing documentation.
-
 ## 🔧 Development
 
-### React Frontend Development
+### Backend Development (Backend Only)
+The backend deploy script now only deploys backend resources:
 ```bash
-cd react-frontend
-
-# Setup environment
-./setup.sh
-
-# Install dependencies
-npm install
-
-# Start development server
-npm start
-
-# Build for production
-npm run build
+cd backend
+./deploy.sh --owner=your-name  # Backend resources only
 ```
 
-### Backend Development
+### Frontend Development (Separate)
 ```bash
-# Test Lambda functions locally
-cd backend/lambda/get_questions
-python lambda_function.py
-
-# Deploy changes
-cd backend
-./deploy.sh --owner=your-name
+cd react-frontend
+./deploy.sh --owner=your-name  # Frontend resources only
 ```
 
 ### Updating Questions
 Edit CSV files in `/data/` directory and run:
 ```bash
-python backend/setup_questions.py --upload
+cd backend
+./deploy.sh --owner=your-name  # Uploads updated CSV files
 ```
 
-### Continuous Integration
+### Full Deployment
 ```bash
-# Deploy backend and React frontend in one command
-cd backend && ./deploy.sh --owner=pete && cd ../react-frontend && ./deploy.sh --owner=pete
+# Deploy backend first
+cd backend && ./deploy.sh --owner=your-name
+
+# Then deploy frontend
+cd ../react-frontend && ./deploy.sh --owner=your-name
 ```
 
 ## 🔍 Troubleshooting
@@ -216,144 +230,53 @@ npm install
 ```
 
 **API connection issues:**
-- Check `REACT_APP_API_URL` in `.env`
-- Verify backend is deployed: `cat backend/cdk/api-outputs.json`
+- Check backend is deployed: `cat backend/cdk/api-outputs.json`
 - Test API directly: `curl "$API_URL/questions?type=company"`
-
-**Build failures:**
-```bash
-# Clear cache and rebuild
-npm run build -- --verbose
-```
 
 #### Backend API Issues
 **"Failed to load survey: Invalid questions format received from server"**
 
 **Diagnosis Steps:**
-1. **Quick Check**: Run the diagnostic script
-   ```bash
-   python3 diagnose_api.py https://your-api-url.com/dev
-   ```
-
-2. **Backend Issues** (if diagnostic fails):
-   - Redeploy the backend: `cd backend && ./deploy.sh --owner=your-name`
-   - Check Lambda logs: `aws logs tail /aws/lambda/baksh-audit-*-get-questions --follow`
-   - Verify S3 questions files exist: Check S3 bucket for `questions/company_questions.csv`
-
-3. **Frontend Issues** (if diagnostic passes):
-   - Check browser console for JavaScript errors
-   - Clear browser cache and reload
-
-#### Other Common Issues
-- **CORS errors**: Verify API Gateway CORS configuration in CDK
-- **File upload failures**: Check Lambda memory limits and timeout settings
-- **Test failures**: Review deployment outputs and AWS resource permissions
+1. Run diagnostic: `python3 diagnose_api.py https://your-api-url.com/dev`
+2. Redeploy backend: `cd backend && ./deploy.sh --owner=your-name`
+3. Check Lambda logs: `aws logs tail /aws/lambda/baksh-audit-*-get-questions --follow`
 
 ### Debugging Commands
 ```bash
 # Check deployment outputs
 cat backend/cdk/api-outputs.json
-cat backend/cdk/infra-outputs.json
 
-# View Lambda logs
-aws logs tail /aws/lambda/baksh-audit-*-get-questions --follow
-
-# Test API endpoints directly
-API_URL=$(cat backend/cdk/api-outputs.json | jq -r '.["baksh-audit-OWNER-dev-Api"].ApiUrl')
+# Test API endpoints
+API_URL=$(cat backend/cdk/api-outputs.json | jq -r '.[\"baksh-audit-OWNER-dev-Api\"].ApiUrl')
 curl "$API_URL/questions?type=company"
-
-# Quick diagnosis
-python3 diagnose_api.py $API_URL
 ```
 
 ## 📊 Project Structure
 
 ```
 baksh-audit-form/
-├── backend/                 # AWS CDK infrastructure
+├── backend/                 # AWS CDK infrastructure (backend only)
 │   ├── cdk/                # CDK Python code
-│   │   ├── src/stacks/     # CDK stack definitions
-│   │   ├── api-outputs.json # Generated API endpoints
-│   │   └── infra-outputs.json # Generated infrastructure info
 │   ├── lambda/             # Lambda function code
-│   ├── deploy.sh           # Backend deployment script
+│   ├── deploy.sh           # Backend deployment script (backend only)
 │   └── destroy.sh          # Cleanup script
 ├── react-frontend/         # Modern React application
 │   ├── src/
 │   │   ├── components/     # React components
-│   │   ├── pages/          # Page components
-│   │   ├── services/       # API service layer
+│   │   ├── pages/          # Page components (simplified HomePage)
+│   │   ├── services/       # API service layer (enhanced)
 │   │   └── config/         # Configuration
-│   ├── public/             # Static assets
+│   ├── public/             # Static assets (place logo.png here)
 │   ├── setup.sh            # Development setup
-│   ├── deploy.sh           # Frontend deployment
+│   ├── deploy.sh           # Frontend deployment (frontend only)
 │   └── package.json        # Dependencies
-├── frontend/               # Original vanilla JS frontend (legacy)
-├── data/                   # Survey questions (CSV)
+├── data/                   # Survey questions (CSV) - editable
+├── CSV_QUESTIONS.md        # CSV configuration guide
 ├── test_api.py             # API test suite
 ├── diagnose_api.py         # Quick diagnostics script
 ├── run_tests.sh            # Automated test runner
 └── README.md               # This file
 ```
-
-## 🔄 Frontend Migration
-
-### React vs Original Frontend
-
-| Feature | React Frontend | Original Frontend |
-|---------|----------------|-------------------|
-| **Framework** | React 18 | Vanilla JavaScript |
-| **Styling** | Tailwind CSS | Custom CSS |
-| **Animations** | Framer Motion | CSS transitions |
-| **State Management** | React hooks | Manual DOM manipulation |
-| **Build Process** | Create React App | Direct deployment |
-| **Development** | Hot reloading | Manual refresh |
-| **Mobile Support** | Mobile-first responsive | Basic responsive |
-| **File Upload UX** | Drag-and-drop with progress | Basic file input |
-| **Form Validation** | Real-time with error states | Basic validation |
-| **Auto-save** | Every 30 seconds | Manual save only |
-
-### Migration Benefits
-- **Better User Experience**: Smooth animations, better feedback
-- **Improved Maintainability**: Component-based architecture
-- **Modern Development**: Better tooling, debugging, testing
-- **Enhanced Mobile Support**: Touch-friendly, responsive design
-- **Professional Appearance**: Consistent DMGT branding
-
-### Backward Compatibility
-✅ **API Compatible**: Uses same Lambda backend  
-✅ **Data Compatible**: Same request/response format  
-✅ **Deployment Compatible**: Can coexist with original  
-
-## 📞 Support
-
-### Quick Diagnostics
-1. **API Issues**: Run `python3 diagnose_api.py https://your-api-url.com/dev`
-2. **React Issues**: Check browser console and `npm start` output
-3. **Backend Issues**: Check [Troubleshooting](#-troubleshooting) section
-
-### Getting Help
-1. Review CloudWatch logs for detailed error information
-2. Run `./run_tests.sh` to validate your deployment
-3. Check the specific component README files:
-   - [React Frontend README](react-frontend/README.md)
-   - [API Testing Guide](API_TESTING.md)
-4. Open an issue in this repository with test results
-
-## 🔄 Recent Updates
-
-### v3.0 - React Frontend Addition
-- **Added**: Complete React frontend with modern UI/UX
-- **Enhanced**: Multi-page survey navigation with progress tracking
-- **Improved**: File upload with drag-and-drop functionality
-- **Added**: Auto-save functionality and real-time validation
-- **Enhanced**: Mobile-responsive design with professional branding
-
-### v2.1 - Enhanced Error Handling & Debugging
-- **Fixed**: Improved Lambda function event handling for API Gateway proxy integration
-- **Added**: Comprehensive diagnostic script (`diagnose_api.py`)
-- **Enhanced**: Better error messages and logging in Lambda functions
-- **Improved**: Troubleshooting documentation with specific solutions
 
 ## 🎯 Deployment Checklist
 
@@ -367,6 +290,7 @@ baksh-audit-form/
 ### React Frontend Deployment
 - [ ] Node.js 16+ installed
 - [ ] Backend deployed successfully
+- [ ] Add `logo.png` to `react-frontend/public/` (optional)
 - [ ] Run `cd react-frontend && ./setup.sh`
 - [ ] Run `./deploy.sh --owner=your-name`
 - [ ] Test the deployed application
@@ -374,9 +298,30 @@ baksh-audit-form/
 ### Validation
 - [ ] Run `./run_tests.sh` - expect 7/10 tests to pass
 - [ ] Test both company and employee surveys
+- [ ] Test enhanced save/reload logic with "List Available" button
 - [ ] Verify file upload functionality (employee survey)
 - [ ] Check mobile responsiveness
 - [ ] Confirm auto-save works (wait 30 seconds during form completion)
+- [ ] Verify logo displays correctly (if added)
+
+## 🔄 Recent Updates - Final Changes
+
+### v3.1 - Enhanced Save/Reload and British English
+- **Enhanced**: Smart audit listing with modal interface for both company and employee surveys
+- **Added**: "List Available" button to browse existing audits before reloading
+- **Improved**: Three-tier reload system (List Available, Load Current, Individual Selection)
+- **Enhanced**: Company recognition with clear status indicators
+- **Added**: Logo support - place `logo.png` in `react-frontend/public/`
+- **Updated**: Simplified homepage with "System Only" subtitle, removed features section
+- **Improved**: Backend deploy script now deploys backend resources only
+- **Standardised**: British English throughout (recognised, utilisation, etc.)
+- **Added**: CSV questions configuration documentation
+- **Enhanced**: File upload integration with save operations
+- **Improved**: Mobile responsiveness and user experience
+
+### Previous Updates
+- **v3.0**: Complete React frontend with modern UI/UX
+- **v2.1**: Enhanced error handling and debugging capabilities
 
 ---
 
