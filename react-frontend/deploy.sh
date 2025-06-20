@@ -148,9 +148,9 @@ fi
 print_status "Node.js version: $(node --version)"
 print_status "npm version: $(npm --version)"
 
-# Install dependencies
+# Install dependencies - using npm install instead of npm ci for better compatibility
 print_status "Installing dependencies..."
-npm ci
+npm install
 
 # Auto-detect API URL if not provided
 if [[ -z "$API_URL" ]]; then
