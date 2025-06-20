@@ -11,7 +11,8 @@ import {
   BookmarkIcon,
   DocumentArrowDownIcon,
   BuildingOfficeIcon,
-  UserIcon
+  UserIcon,
+  BugAntIcon
 } from '@heroicons/react/24/outline';
 
 import QuestionRenderer from './QuestionRenderer';
@@ -36,6 +37,7 @@ const SurveyForm = ({
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
+  const [debugging, setDebugging] = useState(false);
   
   // Form identification
   const [companyId, setCompanyId] = useState('');
@@ -194,6 +196,51 @@ const SurveyForm = ({
     }
   };
 
+  const debugFileUpload = async () => {
+    if (!companyId || (surveyType === 'employee' && !employeeId)) {
+      toast.error('Please enter valid IDs first');
+      return;
+    }
+
+    if (files.length === 0) {
+      toast.error('Please select some files first');
+      return;
+    }
+
+    try {
+      setDebugging(true);
+      
+      const debugData = {
+        type: surveyType,
+        company_id: companyId,
+        responses: responses
+      };
+
+      if (surveyType === 'employee') {
+        debugData.employee_id = employeeId;
+      }
+
+      const debugInfo = await apiService.debugFileUpload(debugData, files);
+      
+      console.log('🐛 File Upload Debug Results:', debugInfo);
+      
+      // Show debug information in a toast
+      const validFiles = debugInfo.validation.filter(v => v.valid).length;
+      const invalidFiles = debugInfo.validation.filter(v => !v.valid).length;
+      
+      toast.success(
+        `Debug complete: ${validFiles} valid files, ${invalidFiles} invalid files. Check console for details.`,
+        { duration: 8000 }
+      );
+
+    } catch (error) {
+      console.error('Debug failed:', error);
+      toast.error('Debug failed: ' + error.message);
+    } finally {
+      setDebugging(false);
+    }
+  };
+
   const handleResponseChange = (questionId, value) => {
     setResponses(prev => ({
       ...prev,
@@ -291,6 +338,7 @@ const SurveyForm = ({
       }
 
       if (files.length > 0 && surveyType === 'employee') {
+        console.log('📤 Submitting with files:', files.map(f => ({ name: f.name, size: f.size })));
         await apiService.saveResponseWithFiles(submitData, files);
       } else {
         await apiService.saveResponse(submitData);
@@ -417,6 +465,33 @@ const SurveyForm = ({
               >
                 <DocumentArrowDownIcon className="w-4 h-4" />
                 <span>Load Previous</span>
+              </button>
+            )}
+
+            {/* Debug File Upload Button */}
+            {files.length > 0 && surveyType === 'employee' && (
+              <button
+                onClick={debugFileUpload}
+                disabled={debugging}
+                className={`
+                  w-full flex items-center justify-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors
+                  ${debugging
+                    ? 'bg-orange-100 text-orange-400 cursor-not-allowed'
+                    : 'bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200'
+                  }
+                `}
+              >
+                {debugging ? (
+                  <>
+                    <div className="animate-spin rounded-full h-3 w-3 border-b border-orange-600"></div>
+                    <span>Debugging...</span>
+                  </>
+                ) : (
+                  <>
+                    <BugAntIcon className="w-4 h-4" />
+                    <span>Debug Files</span>
+                  </>
+                )}
               </button>
             )}
           </div>

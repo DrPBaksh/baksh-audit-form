@@ -19,7 +19,11 @@ class ApiService {
     const finalOptions = { ...defaultOptions, ...options };
 
     try {
-      console.log(`Making request to: ${url}`, finalOptions);
+      console.log(`🌐 Making request to: ${url}`, {
+        method: finalOptions.method || 'GET',
+        headers: finalOptions.headers,
+        bodySize: finalOptions.body ? finalOptions.body.length : 0
+      });
       
       const response = await fetch(url, finalOptions);
       
@@ -30,15 +34,20 @@ class ApiService {
         } catch {
           errorData = { error: `HTTP ${response.status}: ${response.statusText}` };
         }
+        console.error('❌ API Request failed:', errorData);
         throw new Error(errorData.message || errorData.error || `Request failed with status ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('API Response:', data);
+      console.log('✅ API Response received:', {
+        status: response.status,
+        dataKeys: Object.keys(data),
+        message: data.message
+      });
       return data;
       
     } catch (error) {
-      console.error('API Request Error:', error);
+      console.error('💥 API Request Error:', error);
       throw error;
     }
   }
@@ -64,6 +73,15 @@ class ApiService {
    */
   async saveResponse(responseData) {
     const url = getEndpointUrl('saveResponse');
+    
+    console.log('💾 Saving response:', {
+      type: responseData.type,
+      company_id: responseData.company_id,
+      employee_id: responseData.employee_id,
+      responseCount: Object.keys(responseData.responses || {}).length,
+      hasFiles: !!responseData.files,
+      fileCount: responseData.files ? responseData.files.length : 0
+    });
     
     return await this.makeRequest(url, {
       method: 'POST',
@@ -123,22 +141,45 @@ class ApiService {
    */
   async prepareFileForUpload(file) {
     return new Promise((resolve, reject) => {
+      console.log('📎 Preparing file for upload:', {
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        lastModified: file.lastModified
+      });
+
       const reader = new FileReader();
       
       reader.onload = () => {
-        // Remove data URL prefix to get just the base64 content
-        const base64Content = reader.result.split(',')[1];
-        
-        resolve({
-          filename: file.name,
-          content: base64Content,
-          content_type: file.type || 'application/octet-stream',
-          size: file.size
-        });
+        try {
+          // Remove data URL prefix to get just the base64 content
+          const base64Content = reader.result.split(',')[1];
+          
+          const fileData = {
+            filename: file.name,
+            content: base64Content,
+            content_type: file.type || 'application/octet-stream',
+            size: file.size
+          };
+
+          console.log('✅ File prepared for upload:', {
+            filename: fileData.filename,
+            content_type: fileData.content_type,
+            size: fileData.size,
+            base64Length: base64Content.length
+          });
+          
+          resolve(fileData);
+        } catch (error) {
+          console.error('❌ Error preparing file:', error);
+          reject(new Error(`Failed to prepare file ${file.name}: ${error.message}`));
+        }
       };
       
       reader.onerror = () => {
-        reject(new Error('Failed to read file'));
+        const error = new Error(`Failed to read file: ${file.name}`);
+        console.error('❌ FileReader error:', error);
+        reject(error);
       };
       
       reader.readAsDataURL(file);
@@ -153,6 +194,13 @@ class ApiService {
    */
   validateFile(file, maxSizeInMB = 10) {
     const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
+    
+    console.log('🔍 Validating file:', {
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      maxSizeInBytes
+    });
     
     // Check file size
     if (file.size > maxSizeInBytes) {
@@ -169,20 +217,28 @@ class ApiService {
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       'application/vnd.ms-excel',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
       'image/jpeg',
+      'image/jpg',
       'image/png',
       'image/gif',
       'text/plain',
       'text/csv'
     ];
 
-    if (!allowedTypes.includes(file.type)) {
+    // Also allow empty type for files with known extensions
+    const knownExtensions = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.jpg', '.jpeg', '.png', '.gif', '.txt', '.csv'];
+    const hasKnownExtension = knownExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
+
+    if (!allowedTypes.includes(file.type) && !hasKnownExtension && file.type !== '') {
       return {
         valid: false,
-        error: 'File type not supported. Please upload PDF, Word, Excel, image, or text files.'
+        error: 'File type not supported. Please upload PDF, Word, Excel, PowerPoint, image, or text files.'
       };
     }
 
+    console.log('✅ File validation passed');
     return { valid: true };
   }
 
@@ -194,6 +250,14 @@ class ApiService {
    */
   async saveResponseWithFiles(responseData, files = []) {
     try {
+      console.log('📤 Starting file upload process:', {
+        responseType: responseData.type,
+        companyId: responseData.company_id,
+        employeeId: responseData.employee_id,
+        fileCount: files.length,
+        files: files.map(f => ({ name: f.name, size: f.size, type: f.type }))
+      });
+
       // Validate all files first
       for (const file of files) {
         const validation = this.validateFile(file);
@@ -203,9 +267,12 @@ class ApiService {
       }
 
       // Prepare files for upload
+      console.log('🔄 Converting files to base64...');
       const preparedFiles = await Promise.all(
         files.map(file => this.prepareFileForUpload(file))
       );
+
+      console.log('📦 All files prepared, adding to request data');
 
       // Add files to response data
       const dataWithFiles = {
@@ -213,10 +280,22 @@ class ApiService {
         files: preparedFiles
       };
 
-      return await this.saveResponse(dataWithFiles);
+      console.log('🚀 Sending request with files:', {
+        type: dataWithFiles.type,
+        company_id: dataWithFiles.company_id,
+        employee_id: dataWithFiles.employee_id,
+        responseCount: Object.keys(dataWithFiles.responses || {}).length,
+        fileCount: dataWithFiles.files.length,
+        totalSize: preparedFiles.reduce((total, f) => total + f.size, 0)
+      });
+
+      const result = await this.saveResponse(dataWithFiles);
+      
+      console.log('🎉 File upload completed successfully:', result);
+      return result;
       
     } catch (error) {
-      console.error('Error preparing files for upload:', error);
+      console.error('💥 File upload failed:', error);
       throw new Error(`File upload failed: ${error.message}`);
     }
   }
@@ -255,6 +334,84 @@ class ApiService {
       return false;
     }
   }
+
+  /**
+   * Debug file upload process
+   * @param {Object} responseData - Response data
+   * @param {File[]} files - Array of files
+   * @returns {Promise<Object>} Debug information
+   */
+  async debugFileUpload(responseData, files = []) {
+    const debug = {
+      timestamp: new Date().toISOString(),
+      responseData: {
+        type: responseData.type,
+        company_id: responseData.company_id,
+        employee_id: responseData.employee_id,
+        hasResponses: !!responseData.responses,
+        responseCount: Object.keys(responseData.responses || {}).length
+      },
+      files: [],
+      validation: [],
+      prepared: [],
+      errors: []
+    };
+
+    try {
+      // Debug file information
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const fileInfo = {
+          index: i,
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          lastModified: file.lastModified
+        };
+        debug.files.push(fileInfo);
+
+        // Validate file
+        const validation = this.validateFile(file);
+        debug.validation.push({
+          index: i,
+          filename: file.name,
+          valid: validation.valid,
+          error: validation.error || null
+        });
+
+        if (validation.valid) {
+          try {
+            const prepared = await this.prepareFileForUpload(file);
+            debug.prepared.push({
+              index: i,
+              filename: prepared.filename,
+              content_type: prepared.content_type,
+              size: prepared.size,
+              base64Length: prepared.content.length
+            });
+          } catch (error) {
+            debug.errors.push({
+              index: i,
+              filename: file.name,
+              stage: 'preparation',
+              error: error.message
+            });
+          }
+        }
+      }
+
+      console.log('🐛 File upload debug information:', debug);
+      return debug;
+
+    } catch (error) {
+      debug.errors.push({
+        stage: 'general',
+        error: error.message
+      });
+      console.error('🐛 Debug file upload failed:', error);
+      return debug;
+    }
+  }
 }
 
 // Export singleton instance
@@ -270,5 +427,6 @@ export const {
   healthCheck,
   checkCompanyExists,
   validateFile,
-  testFileUpload
+  testFileUpload,
+  debugFileUpload
 } = apiService;
