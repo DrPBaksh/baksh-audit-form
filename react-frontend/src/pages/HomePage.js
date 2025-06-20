@@ -9,7 +9,10 @@ import {
   DocumentTextIcon,
   CloudArrowUpIcon,
   ShieldCheckIcon,
-  CpuChipIcon
+  CpuChipIcon,
+  BookmarkIcon,
+  DocumentArrowDownIcon,
+  CheckCircleIcon as CheckCircleIconSolid
 } from '@heroicons/react/24/outline';
 import { CheckCircleIcon } from '@heroicons/react/24/solid';
 import apiService from '../services/api';
@@ -17,9 +20,11 @@ import config from '../config/api';
 
 const HomePage = () => {
   const [apiStatus, setApiStatus] = useState('checking');
+  const [fileUploadSupported, setFileUploadSupported] = useState(null);
 
   useEffect(() => {
     checkApiHealth();
+    testFileUploadSupport();
   }, []);
 
   const checkApiHealth = async () => {
@@ -31,6 +36,15 @@ const HomePage = () => {
     }
   };
 
+  const testFileUploadSupport = async () => {
+    try {
+      const supported = await apiService.testFileUpload();
+      setFileUploadSupported(supported);
+    } catch (error) {
+      setFileUploadSupported(false);
+    }
+  };
+
   const features = [
     {
       icon: ChartBarIcon,
@@ -38,29 +52,29 @@ const HomePage = () => {
       description: 'Company-level and employee-level assessments to capture comprehensive insights.'
     },
     {
-      icon: ClockIcon,
-      title: 'Progressive Saving',
-      description: 'Automatically save progress and resume partially completed forms anytime.'
+      icon: BookmarkIcon,
+      title: 'Page-by-Page Saving',
+      description: 'Save progress after each page and resume at any time with load previous responses.'
+    },
+    {
+      icon: DocumentArrowDownIcon,
+      title: 'Smart Company Recognition',
+      description: 'Automatically detects existing companies and offers to load previous responses.'
     },
     {
       icon: CloudArrowUpIcon,
-      title: 'File Uploads',
-      description: 'Employee document attachments with secure cloud storage.'
+      title: 'Enhanced File Uploads',
+      description: 'Improved drag-and-drop file uploads with validation and progress indicators.'
     },
     {
       icon: ShieldCheckIcon,
       title: 'Secure & Compliant',
-      description: 'AWS-native security with IAM least privilege principles.'
+      description: 'AWS-native security with IAM least privilege principles and data encryption.'
     },
     {
       icon: CpuChipIcon,
-      title: 'Serverless Architecture',
-      description: 'Cost-effective, auto-scaling infrastructure that adapts to your needs.'
-    },
-    {
-      icon: DocumentTextIcon,
-      title: 'Comprehensive Reports',
-      description: 'Detailed insights into AI and data readiness across all dimensions.'
+      title: 'Optimized Performance',
+      description: 'Better space utilization, faster loading, and responsive design improvements.'
     }
   ];
 
@@ -114,12 +128,13 @@ const HomePage = () => {
           AI & Data Readiness Survey
         </h1>
         <p className="text-xl text-slate-600 max-w-3xl mx-auto">
-          Comprehensive assessment platform designed to evaluate your organization's 
-          readiness for AI transformation and data-driven decision making.
+          Enhanced assessment platform with improved user experience, page-by-page saving, 
+          and smart company recognition for your organization's AI transformation.
         </p>
         
-        {/* API Status Indicator */}
-        <div className="flex justify-center">
+        {/* System Status */}
+        <div className="flex flex-col sm:flex-row justify-center gap-4">
+          {/* API Status */}
           <div className={`
             flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium
             ${apiStatus === 'healthy' 
@@ -146,7 +161,59 @@ const HomePage = () => {
               </>
             )}
           </div>
+
+          {/* File Upload Status */}
+          {fileUploadSupported !== null && (
+            <div className={`
+              flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium
+              ${fileUploadSupported 
+                ? 'bg-green-100 text-green-800' 
+                : 'bg-orange-100 text-orange-800'
+              }
+            `}>
+              <CloudArrowUpIcon className="w-4 h-4" />
+              <span>
+                File Uploads {fileUploadSupported ? 'Supported' : 'Limited'}
+              </span>
+            </div>
+          )}
         </div>
+
+        {/* New Features Alert */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+          className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6 max-w-4xl mx-auto"
+        >
+          <h3 className="text-lg font-semibold text-blue-900 mb-3 flex items-center space-x-2">
+            <CheckCircleIconSolid className="w-5 h-5 text-blue-600" />
+            <span>✨ Enhanced Features Now Available</span>
+          </h3>
+          <div className="grid md:grid-cols-3 gap-4 text-sm">
+            <div className="flex items-start space-x-2">
+              <BookmarkIcon className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-medium text-blue-900">Smart Saving</p>
+                <p className="text-blue-700">Save progress after each page with instant feedback</p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-2">
+              <DocumentArrowDownIcon className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-medium text-blue-900">Company Recognition</p>
+                <p className="text-blue-700">Automatic detection of existing companies</p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-2">
+              <CloudArrowUpIcon className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-medium text-blue-900">Better File Handling</p>
+                <p className="text-blue-700">Enhanced upload validation and progress tracking</p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
       </motion.div>
 
       {/* Assessment Types */}
@@ -235,9 +302,9 @@ const HomePage = () => {
         className="space-y-8"
       >
         <div className="text-center">
-          <h2 className="text-3xl font-bold text-slate-900">Platform Features</h2>
+          <h2 className="text-3xl font-bold text-slate-900">Enhanced Platform Features</h2>
           <p className="text-lg text-slate-600 mt-2">
-            Built with enterprise-grade reliability and security
+            New improvements for better user experience and data management
           </p>
         </div>
 
@@ -278,8 +345,8 @@ const HomePage = () => {
           Ready to Assess Your AI Readiness?
         </h2>
         <p className="text-lg mb-6 opacity-90">
-          Start with either assessment type and get immediate insights into your organization's 
-          AI and data capabilities.
+          Experience the enhanced survey platform with smart saving, company recognition, 
+          and improved file handling capabilities.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
@@ -304,6 +371,11 @@ const HomePage = () => {
           >
             Start Employee Assessment
           </Link>
+        </div>
+        
+        {/* Quick Info */}
+        <div className="mt-6 text-sm opacity-80">
+          <p>✨ New: Save progress on each page • Load previous responses • Enhanced file uploads</p>
         </div>
       </motion.div>
     </div>
